@@ -4,20 +4,15 @@ A fault-tolerant storage service that splits files into erasure-coded shards and
 spreads them across multiple Google Drive accounts, so no single account can
 destroy the data.
 
-Built incrementally from [`BUILD-PLAN.md`](BUILD-PLAN.md). The plan is the
-source of truth; this README describes what exists today.
+## Features
 
-## Status
-
-Phases 0 and 1 are complete. The web frontend is intentionally not started yet.
-
-| Phase | Scope | State |
-| --- | --- | --- |
-| 0 | Project foundation, `/health` | done |
-| 1 | Metadata layer (SQLite, models, repositories) | done |
-| 2 | Google Drive provider and OAuth | not started |
-| 3 | Storage pool manager | partial (pool lifecycle and capacity only) |
-| 4+ | Chunking, erasure coding, transfer, recovery, API, UI | not started |
+- **Multi-stripe erasure coding** — files split into K+M shards per stripe with configurable redundancy
+- **Streaming upload/download** — no spooling, works with files larger than memory
+- **Automatic recovery** — detects missing shards and rebuilds them onto healthy nodes
+- **Integrity verification** — SHA-256 at file, stripe, and shard levels
+- **Server-side encryption** — AES-256-GCM or XChaCha20-Poly1305, per-file keys
+- **Health monitoring** — node status tracking with automatic degradation detection
+- **Abandoned upload cleanup** — sweeps incomplete uploads after configurable timeout
 
 ## Quick start
 
@@ -63,8 +58,25 @@ chosen so that `make run` works with no setup. See
 | `GET` | `/api/pools/{poolID}` | Fetch one pool. |
 | `DELETE` | `/api/pools/{poolID}` | Delete an empty pool. |
 | `GET` | `/api/pools/{poolID}/capacity` | Aggregate capacity and node shortfall. |
+| `POST` | `/api/pools/{poolID}/nodes` | Register a storage node. |
+| `GET` | `/api/pools/{poolID}/nodes` | List nodes in a pool. |
+| `DELETE` | `/api/pools/{poolID}/nodes/{nodeID}` | Detach a node from a pool. |
+| `GET` | `/api/nodes` | List all nodes. |
+| `GET` | `/api/nodes/{nodeID}` | Fetch a node. |
+| `DELETE` | `/api/nodes/{nodeID}` | Delete a node. |
+| `POST` | `/api/nodes/check` | Check all nodes. |
+| `GET` | `/api/nodes/{nodeID}/status` | Check one node. |
+| `POST` | `/api/pools/{poolID}/files` | Upload a file. |
+| `GET` | `/api/pools/{poolID}/files` | List files in a pool. |
+| `GET` | `/api/pools/{poolID}/files/{fileID}` | Fetch file metadata. |
+| `GET` | `/api/pools/{poolID}/files/{fileID}/download` | Download a file. |
+| `POST` | `/api/pools/{poolID}/files/{fileID}/repair` | Repair a file. |
+| `POST` | `/api/pools/{poolID}/files/{fileID}/scrub` | Scrub a file. |
+| `POST` | `/api/pools/{poolID}/maintenance/repair` | Repair all files in pool. |
+| `POST` | `/api/pools/{poolID}/maintenance/scrub` | Scrub all files in pool. |
+| `POST` | `/api/pools/{poolID}/maintenance/sweep` | Sweep abandoned uploads. |
 
-Every error uses one envelope, so a client only has to parse one shape:
+Every error uses one envelope:
 
 ```json
 {
@@ -78,7 +90,7 @@ Every error uses one envelope, so a client only has to parse one shape:
 
 `code` is stable and safe to branch on. `message` is for humans. `requestId` is
 echoed in the `X-Request-ID` response header and in every log line for that
-request, so a user-reported failure can be traced to a single entry.
+request.
 
 ## Architecture
 
