@@ -1,26 +1,23 @@
 package main
 
 import (
-	"log"
-	"net/http"
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/VibolSovichea/distributed-drive/internal/app"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
-	})
+	if err := app.Run(ctx); err != nil {
 
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-	}
-
-	log.Println("server listening on :8080")
-
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		stop()
+		fmt.Fprintf(os.Stderr, "distributed-drive: %v\n", err)
+		os.Exit(1)
 	}
 }

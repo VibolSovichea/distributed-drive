@@ -1,0 +1,56 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocritic
+    - misspell
+    - nilerr
+    - noctx
+    - predeclared
+    - revive
+    - unconvert
+    - wastedassign
+  disable:
+    - errcheck # every unchecked error here is deliberate and commented
+
+  settings:
+    errcheck:
+      # Errors returned to the caller are always checked; the ones dropped are
+      # response writes and deferred closes, which cannot usefully be acted on.
+      check-type-assertions: false
+    errorlint:
+      asserts: true
+      comparison: true
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+    revive:
+      rules:
+        - name: exported
+          disabled: false
+
+  exclusions:
+    rules:
+      # A test may care about a field being set and nothing else, and asserting
+      # every field of every struct is noise.
+      - path: _test\.go
+        linters:
+          - exhaustive
+          - unused
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
