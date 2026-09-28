@@ -1,0 +1,88 @@
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+# A new push makes an in-flight run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          # The module cache is restored rather than re-downloaded, which is
+          # most of the difference in a Go job's wall time.
+          cache: true
+
+      - name: Check formatting
+        run: make fmt-check
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test with the race detector
+        # The service is concurrent by design, so the race detector is part of
+        # the gate rather than an occasional extra run.
+        run: go test -race -covermode=atomic -coverprofile=coverage.txt ./...
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.txt | tail -n 1
+
+      - name: Build
+        run: go build -trimpath -o bin/distributed-drive ./cmd/server
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.1.6
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # The image build runs vet and the tests, so a push cannot produce a
+          # broken image even if this job is the only one that ran.
+          push: false
+          load: true
+          tags: distributed-drive:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the container
+        run: |
+          docker run -d --name ci-smoke -p 8080:8080 distributed-drive:ci
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/health/ready > /dev/null; then
+              echo "readiness probe passed"
+              curl -fsS -X POST http://127.0.0.1:8080/api/pools \
+                -H 'Content-Type: application/json' \
+                -d '{"name":"ci","dataChunks":4,"parityChunks":2,"chunkSize":8388608}'
+              docker rm -f ci-smoke
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "service never became ready" >&2
+          docker logs ci-smoke
+          docker rm -f ci-smoke
+          exit 1

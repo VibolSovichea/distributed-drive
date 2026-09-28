@@ -1,0 +1,36 @@
+# Go build output
+/bin/
+/dist/
+/distributed-drive
+*.exe
+*.test
+*.out
+
+# Coverage
+coverage.txt
+coverage.html
+
+# Runtime data: SQLite database, WAL sidecars, staged shards
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Local configuration and secrets
+.env
+.env.local
+*.local.yaml
+
+# OAuth credentials (Phase 2) - never commit tokens
+credentials.json
+token.json
+*-token.json
+
+# Editors
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Docs
+/docs
