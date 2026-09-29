@@ -1,17 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 package placement
 
 import (
@@ -23,87 +9,36 @@ import (
 )
 
 var (
-	
-	
-	
 	ErrNotEnoughNodes = errors.New("placement: not enough usable nodes for one stripe")
 
-	
-	
 	ErrNoNodeTakesShard = errors.New("placement: no node can accept the shard")
 
-	
-	
 	ErrInvalidRequest = errors.New("placement: invalid request")
 )
 
-
-
 type Shard struct {
-	
 	Stripe int
-	
+
 	Index int
-	
+
 	Size int64
 }
 
-
 type Assignment struct {
 	Shard
-	
+
 	NodeID string
 }
 
-
 type Request struct {
-	
-	
-	
-	
 	Shards []Shard
 
-	
 	Nodes []metadata.Node
 
-	
-	
-	
-	
-	
-	
-	
-	
 	StrictCapacity bool
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	Avoid map[string]bool
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 func Plan(req Request) ([]Assignment, error) {
 	if len(req.Shards) == 0 {
@@ -113,23 +48,12 @@ func Plan(req Request) ([]Assignment, error) {
 		return nil, fmt.Errorf("%w: the pool has no nodes", ErrNotEnoughNodes)
 	}
 
-	
-	
-	
 	ranked := rankNodes(req.Nodes)
 	if len(ranked) == 0 {
 		return nil, fmt.Errorf("%w: every node is offline, full or unauthenticated",
 			ErrNotEnoughNodes)
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
 	groups, err := groupShards(req.Shards)
 	if err != nil {
 		return nil, err
@@ -145,23 +69,9 @@ func Plan(req Request) ([]Assignment, error) {
 	used := make(map[string]int, perStripe)
 
 	for _, group := range groups {
-		
-		
-		
+
 		clear(used)
 
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		offset := 0
 		if len(ranked) > perStripe {
 			offset = (group.stripe * perStripe) % len(ranked)
@@ -180,13 +90,10 @@ func Plan(req Request) ([]Assignment, error) {
 	return out, nil
 }
 
-
 type shardGroup struct {
 	stripe int
 	shards []Shard
 }
-
-
 
 func groupShards(shards []Shard) ([]shardGroup, error) {
 	byStripe := make(map[int][]Shard)
@@ -205,8 +112,7 @@ func groupShards(shards []Shard) ([]shardGroup, error) {
 	for stripe := range byStripe {
 		stripes = append(stripes, stripe)
 	}
-	
-	
+
 	sort.Ints(stripes)
 
 	groups := make([]shardGroup, 0, len(stripes))
@@ -224,9 +130,6 @@ func groupShards(shards []Shard) ([]shardGroup, error) {
 		groups = append(groups, shardGroup{stripe: stripe, shards: group})
 	}
 
-	
-	
-	
 	want := len(groups[0].shards)
 	for _, group := range groups[1:] {
 		if len(group.shards) != want {
@@ -238,8 +141,6 @@ func groupShards(shards []Shard) ([]shardGroup, error) {
 	return groups, nil
 }
 
-
-
 func rotate(nodes []ranked, offset int) []ranked {
 	if offset <= 0 || offset >= len(nodes) {
 		return nodes
@@ -250,13 +151,9 @@ func rotate(nodes []ranked, offset int) []ranked {
 	return out
 }
 
-
-
-
 func chooseNode(ranked []ranked, used map[string]int, shard Shard, req Request) (metadata.Node, error) {
 	for _, candidate := range ranked {
-		
-		
+
 		if used[candidate.node.ID] > 0 {
 			continue
 		}
@@ -269,12 +166,6 @@ func chooseNode(ranked []ranked, used map[string]int, shard Shard, req Request) 
 		return candidate.node, nil
 	}
 
-	
-	
-	
-	
-	
-	
 	var wouldFit, excludedOnly int
 	for _, candidate := range ranked {
 		if used[candidate.node.ID] > 0 || !canHold(candidate, shard.Size, req) {
@@ -297,24 +188,21 @@ func chooseNode(ranked []ranked, used map[string]int, shard Shard, req Request) 
 			"%w: no node has %d bytes free for stripe %d index %d",
 			ErrNoNodeTakesShard, shard.Size, shard.Stripe, shard.Index)
 	default:
-		
-		
+
 		return metadata.Node{}, fmt.Errorf(
 			"%w: stripe %d needs %d distinct nodes and only %d are usable",
 			ErrNotEnoughNodes, shard.Stripe, len(used)+1, len(ranked))
 	}
 }
 
-
 func canHold(candidate ranked, size int64, req Request) bool {
 	node := candidate.node
 
 	if node.Capacity <= 0 {
-		
-		
+
 		return !req.StrictCapacity
 	}
-	
+
 	if node.UsedCapacity >= node.Capacity {
 		return false
 	}
@@ -324,27 +212,10 @@ func canHold(candidate ranked, size int64, req Request) bool {
 	return true
 }
 
-
 type ranked struct {
 	node metadata.Node
 	rank int
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 func rankNodes(nodes []metadata.Node) []ranked {
 	out := make([]ranked, 0, len(nodes))
@@ -361,9 +232,7 @@ func rankNodes(nodes []metadata.Node) []ranked {
 		if a.rank != b.rank {
 			return a.rank < b.rank
 		}
-		
-		
-		
+
 		if a.node.Capacity > 0 && b.node.Capacity > 0 {
 			freeA := a.node.Capacity - a.node.UsedCapacity
 			freeB := b.node.Capacity - b.node.UsedCapacity
@@ -371,34 +240,25 @@ func rankNodes(nodes []metadata.Node) []ranked {
 				return freeA > freeB
 			}
 		}
-		
-		
+
 		return a.node.ID < b.node.ID
 	})
 
 	return out
 }
 
-
-
 func healthRank(node metadata.Node) (rank int, usable bool) {
 	switch node.Status {
 	case metadata.NodeStatusHealthy:
 		return 0, true
 	case metadata.NodeStatusDegraded:
-		
-		
-		
-		
+
 		return 1, true
 	case metadata.NodeStatusUnknown:
-		
-		
-		
+
 		return 2, true
 	default:
-		
-		
+
 		return 0, false
 	}
 }

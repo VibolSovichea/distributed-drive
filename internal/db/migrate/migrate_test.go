@@ -8,11 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	_ "modernc.org/sqlite" 
+	_ "modernc.org/sqlite"
 )
-
-
-
 
 func testDB(t *testing.T) *sql.DB {
 	t.Helper()
@@ -148,8 +145,6 @@ func TestUpFailsOnInvalidSQLAndLeavesVersionUnchanged(t *testing.T) {
 	db := testDB(t)
 	m := New(db)
 
-	
-	
 	if err := m.ensureTable(t.Context()); err != nil {
 		t.Fatalf("ensureTable() error = %v, want nil", err)
 	}
@@ -182,8 +177,6 @@ func TestUpCanContinueAfterAFailure(t *testing.T) {
 		t.Fatalf("Version() error = %v, want nil", err)
 	}
 
-	
-	
 	dup := Migration{Version: 10000, Name: "dup", SQL: "INSERT INTO " + TableName +
 		" (version, name, applied_at) VALUES (1, 'dup', 1)"}
 	if err := m.apply(t.Context(), dup); err == nil {

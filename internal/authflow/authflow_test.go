@@ -9,18 +9,14 @@ import (
 	"time"
 )
 
-
 type fakeAuthorizer struct {
 	mu sync.Mutex
 
-	
 	states []string
-	
+
 	authorizeErr error
 	exchangeErr  error
 
-	
-	
 	exchanged []string
 }
 
@@ -32,8 +28,7 @@ func (f *fakeAuthorizer) NewState(nodeID string) (string, error) {
 	}
 	state := f.states[0]
 	f.states = f.states[1:]
-	
-	
+
 	return state + "@" + nodeID, nil
 }
 
@@ -56,8 +51,6 @@ func (f *fakeAuthorizer) Exchange(_ context.Context, code, state string) error {
 	return nil
 }
 
-
-
 func (f *fakeAuthorizer) NodeOf(state string) (string, bool) {
 	nodeID, ok := strings.CutPrefix(state, "state-")
 	if !ok {
@@ -75,7 +68,6 @@ func (f *fakeAuthorizer) calls() []string {
 	defer f.mu.Unlock()
 	return append([]string(nil), f.exchanged...)
 }
-
 
 func newService(t *testing.T, auth Authorizer, now *time.Time) *Service {
 	t.Helper()
@@ -143,9 +135,6 @@ func TestAStateIsAcceptedOnlyOnce(t *testing.T) {
 		t.Fatalf("the first completion must succeed: %v", err)
 	}
 
-	
-	
-	
 	err := svc.Complete(context.Background(), "code", "state-1@node-1")
 	if !errors.Is(err, ErrUnknownState) {
 		t.Errorf("error = %v, want ErrUnknownState", err)
@@ -166,10 +155,6 @@ func TestAStateForAnotherNodeIsRejected(t *testing.T) {
 		t.Fatalf("Start: %v", err)
 	}
 
-	
-	
-	
-	
 	err := svc.Complete(context.Background(), "code", "state-2@node-2")
 	if !errors.Is(err, ErrUnknownState) {
 		t.Errorf("error = %v, want ErrUnknownState", err)
@@ -187,10 +172,6 @@ func TestAMisreportedNodeIsRefused(t *testing.T) {
 	lying := &liarAuthorizer{fakeAuthorizer: auth}
 	svc := newService(t, lying, &now)
 
-	
-	
-	
-	
 	if _, err := svc.Start(context.Background(), "node-1"); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
@@ -203,7 +184,6 @@ func TestAMisreportedNodeIsRefused(t *testing.T) {
 		t.Errorf("exchanged %v, want nothing", got)
 	}
 }
-
 
 type liarAuthorizer struct {
 	*fakeAuthorizer
@@ -230,8 +210,6 @@ func TestAStateExpires(t *testing.T) {
 		t.Fatalf("Start: %v", err)
 	}
 
-	
-	
 	now = now.Add(11 * time.Minute)
 
 	err := svc.Complete(context.Background(), "code", "state-1@node-1")
@@ -269,8 +247,6 @@ func TestPendingIsBounded(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	svc := newService(t, &fakeAuthorizer{states: manyStates(200)}, &now)
 
-	
-	
 	for i := 0; i < 200; i++ {
 		if _, err := svc.Start(context.Background(), "node-1"); err != nil {
 			t.Fatalf("Start %d: %v", i, err)
@@ -289,8 +265,6 @@ func TestStartDoesNotLeakAStateWhenTheProviderFails(t *testing.T) {
 	auth := &fakeAuthorizer{authorizeErr: errors.New("client id is not configured")}
 	svc := newService(t, auth, &now)
 
-	
-	
 	for i := 0; i < 10; i++ {
 		if _, err := svc.Start(context.Background(), "node-1"); err == nil {
 			t.Fatal("Start must fail when the provider cannot build a URL")
@@ -314,7 +288,6 @@ func TestExpiredEntriesArePruned(t *testing.T) {
 		}
 	}
 
-	
 	now = now.Add(time.Hour)
 	if _, err := svc.Start(context.Background(), "node-1"); err != nil {
 		t.Fatalf("Start: %v", err)
@@ -343,7 +316,6 @@ func TestNewRequiresAnAuthorizer(t *testing.T) {
 		t.Error("New with no authorizer must fail")
 	}
 }
-
 
 func manyStates(n int) []string {
 	out := make([]string, n)

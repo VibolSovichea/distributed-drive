@@ -9,7 +9,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
 func newPoolWithNodes(t *testing.T, n int) (*Manager, *fakeStore, metadata.Pool, []metadata.Node) {
 	t.Helper()
 
@@ -59,9 +58,6 @@ func TestAddNodeTwiceIsRejected(t *testing.T) {
 		t.Fatalf("AddNode: %v", err)
 	}
 
-	
-	
-	
 	_, err := svc.AddNode(t.Context(), pool.ID, nodes[0].ID)
 	if !errors.Is(err, ErrAlreadyAttached) {
 		t.Errorf("error = %v, want ErrAlreadyAttached", err)
@@ -97,9 +93,6 @@ func TestAddNodeRejectsUnknownPoolOrNode(t *testing.T) {
 func TestAddNodeAcceptsAnOfflineNode(t *testing.T) {
 	svc, store, pool, _ := newPoolWithNodes(t, 0)
 
-	
-	
-	
 	offline := store.addNode(metadata.Node{
 		ID: "01HQ0000000000000000000001", Name: "cold", Status: metadata.NodeStatusOffline,
 	})
@@ -140,10 +133,6 @@ func TestRemoveNodeHoldingDataIsRefused(t *testing.T) {
 		}
 	}
 
-	
-	
-	
-	
 	store.chunksByNode[nodes[0].ID] = []metadata.Chunk{{ID: "c1", NodeID: nodes[0].ID}}
 
 	err := svc.RemoveNode(t.Context(), pool.ID, nodes[0].ID)
@@ -151,7 +140,6 @@ func TestRemoveNodeHoldingDataIsRefused(t *testing.T) {
 		t.Fatalf("error = %v, want ErrHasData", err)
 	}
 
-	
 	attached, err := svc.ListNodes(t.Context(), pool.ID)
 	if err != nil {
 		t.Fatalf("ListNodes: %v", err)
@@ -164,8 +152,6 @@ func TestRemoveNodeHoldingDataIsRefused(t *testing.T) {
 func TestRemoveNodeIsIdempotent(t *testing.T) {
 	svc, _, pool, nodes := newPoolWithNodes(t, 1)
 
-	
-	
 	if err := svc.RemoveNode(t.Context(), pool.ID, nodes[0].ID); err != nil {
 		t.Errorf("RemoveNode on a node that was never attached: %v", err)
 	}
@@ -196,7 +182,6 @@ func TestListNodesOnAnUnknownPool(t *testing.T) {
 func TestCapacityCountsAttachedNodes(t *testing.T) {
 	svc, store, pool, nodes := newPoolWithNodes(t, 3)
 
-	
 	before, err := svc.Capacity(t.Context(), pool.ID)
 	if err != nil {
 		t.Fatalf("Capacity: %v", err)
@@ -249,7 +234,6 @@ func TestRemoveNodeThenCapacity(t *testing.T) {
 		t.Fatalf("six nodes with K+M=6 should be usable: %+v", full)
 	}
 
-	
 	if err := svc.RemoveNode(t.Context(), pool.ID, nodes[0].ID); err != nil {
 		t.Fatalf("RemoveNode: %v", err)
 	}

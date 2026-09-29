@@ -14,46 +14,28 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
-
 var ErrUnrepairable = errors.New("store: the file cannot be rebuilt")
-
 
 type LostShard struct {
 	FileID      string
 	StripeIndex int
 	Index       int
 	NodeID      string
-	
-	
+
 	Reason error
 }
 
-
 type RepairResult struct {
 	FileID string
-	
+
 	Restored int
-	
-	
+
 	Unrepaired []int
-	
-	
+
 	Healthy bool
 }
 
-
 func (r RepairResult) Repaired() bool { return r.Restored == 0 && len(r.Unrepaired) == 0 }
-
-
-
-
-
-
-
-
 
 func (s *Store) DetectLost(ctx context.Context, poolID string) ([]LostShard, error) {
 	files, err := s.meta.ListPoolFiles(ctx, poolID)
@@ -63,8 +45,7 @@ func (s *Store) DetectLost(ctx context.Context, poolID string) ([]LostShard, err
 
 	var lost []LostShard
 	for _, file := range files {
-		
-		
+
 		if file.Status == metadata.FileStatusUploading || file.Status == metadata.FileStatusDeleting {
 			continue
 		}
@@ -76,8 +57,7 @@ func (s *Store) DetectLost(ctx context.Context, poolID string) ([]LostShard, err
 
 		sess := newSession(s.nodes, s.meta)
 		for _, chunk := range chunks {
-			
-			
+
 			if chunk.RemoteFileID == "" {
 				lost = append(lost, LostShard{
 					FileID: file.ID, StripeIndex: chunk.StripeIndex, Index: chunk.Index,
@@ -98,8 +78,6 @@ func (s *Store) DetectLost(ctx context.Context, poolID string) ([]LostShard, err
 	return lost, nil
 }
 
-
-
 func statShard(ctx context.Context, sess *session, file metadata.File, chunk metadata.Chunk) error {
 	handle, err := sess.node(ctx, chunk.NodeID)
 	if err != nil {
@@ -111,25 +89,12 @@ func statShard(ctx context.Context, sess *session, file metadata.File, chunk met
 		return err
 	}
 
-	
-	
 	if remote.Size != file.ChunkSize {
 		return fmt.Errorf("%w: object %s on node %s is %d bytes, want %d",
 			provider.ErrInvalid, remote.ID, chunk.NodeID, remote.Size, file.ChunkSize)
 	}
 	return nil
 }
-
-
-
-
-
-
-
-
-
-
-
 
 func (s *Store) RepairFile(ctx context.Context, fileID string) (RepairResult, error) {
 	file, err := s.meta.GetFile(ctx, fileID)
@@ -166,8 +131,6 @@ func (s *Store) RepairFile(ctx context.Context, fileID string) (RepairResult, er
 		return RepairResult{}, fmt.Errorf("store: the file's erasure parameters are unusable: %w", err)
 	}
 
-	
-	
 	nodes, err := s.meta.ListPoolNodes(ctx, pool.ID)
 	if err != nil {
 		return RepairResult{}, fmt.Errorf("store: list the pool's nodes: %w", err)
@@ -179,10 +142,7 @@ func (s *Store) RepairFile(ctx context.Context, fileID string) (RepairResult, er
 	for stripeIndex, group := range stripes {
 		loaded, err := loadStripe(ctx, sess, s.cipher, file, params, codec, group, stripeIndex)
 		if err != nil {
-			
-			
-			
-			
+
 			if errors.Is(err, ErrTooFewShards) || errors.Is(err, ErrFileCorrupt) {
 				result.Healthy = false
 				result.Unrepaired = append(result.Unrepaired, stripeIndex)
@@ -197,9 +157,7 @@ func (s *Store) RepairFile(ctx context.Context, fileID string) (RepairResult, er
 
 		restored, err := s.restoreStripe(ctx, sess, file, pool, stripeIndex, group, loaded, nodes)
 		if err != nil {
-			
-			
-			
+
 			s.markStatus(ctx, file.ID, metadata.FileStatusDegraded)
 			return result, err
 		}
@@ -215,15 +173,12 @@ func (s *Store) RepairFile(ctx context.Context, fileID string) (RepairResult, er
 	return result, nil
 }
 
-
 type restoredShard struct {
 	index  int
 	nodeID string
 	remote provider.RemoteObject
 	chunk  metadata.Chunk
 }
-
-
 
 func (s *Store) restoreStripe(
 	ctx context.Context,
@@ -235,10 +190,7 @@ func (s *Store) restoreStripe(
 	loaded LoadedStripe,
 	nodes []metadata.Node,
 ) (int, error) {
-	
-	
-	
-	
+
 	avoid := make(map[string]bool, len(group))
 	for _, chunk := range group {
 		if chunk.NodeID != "" {
@@ -246,8 +198,6 @@ func (s *Store) restoreStripe(
 		}
 	}
 
-	
-	
 	wanted := make([]placement.Shard, 0, len(loaded.Rebuilt))
 	for _, index := range loaded.Rebuilt {
 		wanted = append(wanted, placement.Shard{
@@ -259,16 +209,13 @@ func (s *Store) restoreStripe(
 
 	plan, err := placement.Plan(placement.Request{Shards: wanted, Nodes: nodes, Avoid: avoid})
 	if err != nil {
-		
-		
-		
+
 		return 0, fmt.Errorf(
 			"store: pool %s has no spare account for a rebuilt shard of file %s: %w", pool.ID, file.ID, err)
 	}
 
 	restored := make([]restoredShard, 0, len(plan))
 
-	
 	var fileKey []byte
 	if s.cipher.Enabled() && file.Encrypted {
 		key, err := crypto.DeriveKey(s.cipher.MasterKey, file.ID)
@@ -285,9 +232,7 @@ func (s *Store) restoreStripe(
 		remote, err := s.storeShard(ctx, sess, UploadInput{}, file, pool,
 			assignment.NodeID, stripeIndex, index, plaintext, fileKey)
 		if err != nil {
-			
-			
-			
+
 			s.discardWritten(ctx, sess, restored)
 			return 0, err
 		}
@@ -295,9 +240,7 @@ func (s *Store) restoreStripe(
 		row := group[index]
 		row.NodeID = assignment.NodeID
 		row.RemoteFileID = remote.ID
-		
-		
-		
+
 		row.Hash = chunker.Hash(plaintext)
 		row.CreatedAt = s.now()
 
@@ -306,44 +249,29 @@ func (s *Store) restoreStripe(
 		})
 	}
 
-	
-	
-	
-	
 	for _, p := range restored {
 		if err := s.meta.ReplaceChunk(ctx, p.chunk); err != nil {
 			return 0, fmt.Errorf("store: repoint stripe %d shard %d: %w", stripeIndex, p.index, err)
 		}
 	}
 
-	
-	
-	
 	for _, p := range restored {
 		old := group[p.index]
 		if old.RemoteFileID == "" || (old.NodeID == p.nodeID && old.RemoteFileID == p.remote.ID) {
 			continue
 		}
-		
-		
+
 		_ = sess.delete(ctx, old.NodeID, old.RemoteFileID)
 	}
 
 	return len(restored), nil
 }
 
-
-
 func (s *Store) discardWritten(ctx context.Context, sess *session, written []restoredShard) {
 	for _, p := range written {
 		_ = sess.delete(ctx, p.nodeID, p.remote.ID)
 	}
 }
-
-
-
-
-
 
 func (s *Store) markStatus(ctx context.Context, fileID string, status metadata.FileStatus) {
 	file, err := s.meta.GetFile(ctx, fileID)
@@ -358,13 +286,6 @@ func (s *Store) markStatus(ctx context.Context, fileID string, status metadata.F
 	_ = s.meta.UpdateFile(ctx, file)
 }
 
-
-
-
-
-
-
-
 func (s *Store) RepairPool(ctx context.Context, poolID string) ([]RepairResult, error) {
 	files, err := s.meta.ListPoolFiles(ctx, poolID)
 	if err != nil {
@@ -376,8 +297,7 @@ func (s *Store) RepairPool(ctx context.Context, poolID string) ([]RepairResult, 
 		switch file.Status {
 		case metadata.FileStatusCommitted, metadata.FileStatusDegraded:
 		default:
-			
-			
+
 			continue
 		}
 
@@ -390,15 +310,6 @@ func (s *Store) RepairPool(ctx context.Context, poolID string) ([]RepairResult, 
 
 	return results, nil
 }
-
-
-
-
-
-
-
-
-
 
 func (s *Store) SweepAbandoned(ctx context.Context, olderThan time.Duration) (int, error) {
 	cutoff := s.now().Add(-olderThan)
@@ -429,24 +340,18 @@ func (s *Store) SweepAbandoned(ctx context.Context, olderThan time.Duration) (in
 	return swept, nil
 }
 
-
 func (s *Store) sweepFile(ctx context.Context, file metadata.File) error {
 	chunks, err := s.meta.GetFileChunks(ctx, file.ID)
 	if err != nil {
 		return fmt.Errorf("store: load file %s's shards: %w", file.ID, err)
 	}
 
-	
-	
-	
-	
 	sess := newSession(s.nodes, s.meta)
 	for _, chunk := range chunks {
 		if chunk.RemoteFileID == "" {
 			continue
 		}
-		
-		
+
 		_ = sess.delete(ctx, chunk.NodeID, chunk.RemoteFileID)
 	}
 
@@ -459,18 +364,14 @@ func (s *Store) sweepFile(ctx context.Context, file metadata.File) error {
 	return nil
 }
 
-
 type ScrubResult struct {
 	FileID   string
-	Verified int  
-	Corrupt  int  
-	Missing  int  
-	Stripes  int  
-	Healthy  bool 
+	Verified int
+	Corrupt  int
+	Missing  int
+	Stripes  int
+	Healthy  bool
 }
-
-
-
 
 func (s *Store) ScrubFile(ctx context.Context, fileID string) (ScrubResult, error) {
 	file, err := s.meta.GetFile(ctx, fileID)
@@ -525,7 +426,6 @@ func (s *Store) ScrubFile(ctx context.Context, fileID string) (ScrubResult, erro
 
 	return result, nil
 }
-
 
 func (s *Store) ScrubPool(ctx context.Context, poolID string) ([]ScrubResult, error) {
 	files, err := s.meta.ListPoolFiles(ctx, poolID)

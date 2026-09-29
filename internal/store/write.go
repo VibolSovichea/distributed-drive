@@ -11,19 +11,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 func (s *Store) storeShard(
 	ctx context.Context,
 	sess *session,
@@ -52,8 +39,6 @@ func (s *Store) storeShard(
 		ciphertext = plaintext
 	}
 
-	
-	
 	remote, err := handle.Upload(ctx, bytes.NewReader(ciphertext), provider.ObjectMetadata{
 		Name:        shardName(file.Name, stripe, index),
 		Description: shardDescription(file.ID, pool.ID, chunker.Hash(plaintext)),

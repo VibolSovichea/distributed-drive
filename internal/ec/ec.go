@@ -1,18 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 package ec
 
 import (
@@ -22,76 +7,29 @@ import (
 	"github.com/klauspost/reedsolomon"
 )
 
-
-
-
-
-
-
-
-
 const MaxShards = 256
 
-
-
-
-
-
-
 var (
-	
-	
 	ErrInvalidParams = errors.New("ec: invalid erasure coding parameters")
 
-	
 	ErrShardCount = errors.New("ec: wrong number of shards")
 
-	
-	
 	ErrShardSize = errors.New("ec: shards must be the same size")
 
-	
-	
 	ErrTooFewShards = errors.New("ec: not enough surviving shards to reconstruct")
 
-	
-	
-	
-	
 	ErrNoShardsPresent = errors.New("ec: no shards survive")
 
-	
-	
-	
-	
-	
-	
-	
 	ErrNoData = errors.New("ec: every shard is empty")
 )
 
-
 type Params struct {
-	
 	Data int
-	
-	
+
 	Parity int
 }
 
-
 func (p Params) Shards() int { return p.Data + p.Parity }
-
-
-
-
-
-
-
-
-
-
-
 
 func (p Params) Alloc(width int) [][]byte {
 	if p.Data < 1 || width <= 0 {
@@ -104,11 +42,7 @@ func (p Params) Alloc(width int) [][]byte {
 	return shards
 }
 
-
-
-
 func (p Params) Tolerates() int { return p.Parity }
-
 
 func (p Params) Validate() error {
 	switch {
@@ -117,74 +51,33 @@ func (p Params) Validate() error {
 	case p.Parity < 0:
 		return fmt.Errorf("%w: %d parity shards is negative", ErrInvalidParams, p.Parity)
 	case p.Data+p.Parity > MaxShards:
-		
-		
+
 		return fmt.Errorf("%w: %d data plus %d parity exceeds the %d shard limit",
 			ErrInvalidParams, p.Data, p.Parity, MaxShards)
 	}
 	return nil
 }
 
-
-
-
-
-
-
 type Codec interface {
-	
 	Params() Params
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	Encode(shards [][]byte) error
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	Reconstruct(shards [][]byte) error
 
-	
-	
-	
-	
-	
-	
 	Verify(shards [][]byte) (bool, error)
 }
-
 
 type reedSolomon struct {
 	params  Params
 	encoder reedsolomon.Encoder
 }
 
-
 func New(params Params) (Codec, error) {
 	if err := params.Validate(); err != nil {
 		return nil, err
 	}
 
-	
-	
-	
 	enc, err := reedsolomon.New(params.Data, params.Parity)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidParams, err)
@@ -195,23 +88,12 @@ func New(params Params) (Codec, error) {
 
 func (c *reedSolomon) Params() Params { return c.params }
 
-
-
-
-
-
-
-
-
 func (c *reedSolomon) check(shards [][]byte) (size int, anyPresent bool, err error) {
 	if len(shards) != c.params.Shards() {
 		return 0, false, fmt.Errorf("%w: have %d, want %d data plus %d parity = %d",
 			ErrShardCount, len(shards), c.params.Data, c.params.Parity, c.params.Shards())
 	}
 
-	
-	
-	
 	for i, shard := range shards {
 		if len(shard) == 0 {
 			continue
@@ -235,9 +117,7 @@ func (c *reedSolomon) Encode(shards [][]byte) error {
 		return err
 	}
 	if !present {
-		
-		
-		
+
 		return ErrNoData
 	}
 	if err := c.encoder.Encode(shards); err != nil {
@@ -248,9 +128,7 @@ func (c *reedSolomon) Encode(shards [][]byte) error {
 }
 
 func (c *reedSolomon) Reconstruct(shards [][]byte) error {
-	
-	
-	
+
 	if _, _, err := c.check(shards); err != nil {
 		return err
 	}
@@ -264,25 +142,17 @@ func (c *reedSolomon) Reconstruct(shards [][]byte) error {
 
 	switch {
 	case present == 0:
-		
-		
-		
+
 		return ErrNoShardsPresent
 	case present == len(shards):
-		
-		
+
 		return nil
 	case present < c.params.Data:
-		
-		
-		
+
 		return fmt.Errorf("%w: %d of %d shards survive and %d are needed",
 			ErrTooFewShards, present, len(shards), c.params.Data)
 	}
 
-	
-	
-	
 	if err := c.encoder.Reconstruct(shards); err != nil {
 		return fmt.Errorf("ec: reconstruct: %w", err)
 	}
@@ -291,13 +161,6 @@ func (c *reedSolomon) Reconstruct(shards [][]byte) error {
 	}
 	return nil
 }
-
-
-
-
-
-
-
 
 func (c *reedSolomon) rebuildMissingParity(shards [][]byte) error {
 	size := 0
@@ -322,18 +185,12 @@ func (c *reedSolomon) rebuildMissingParity(shards [][]byte) error {
 		return nil
 	}
 
-	
-	
 	for i := c.params.Data; i < len(shards); i++ {
 		if len(shards[i]) == 0 {
 			shards[i] = make([]byte, size)
 		}
 	}
 
-	
-	
-	
-	
 	if err := c.encoder.Encode(shards); err != nil {
 		return fmt.Errorf("ec: rebuild parity: %w", err)
 	}

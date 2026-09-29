@@ -44,10 +44,8 @@ func TestCreatePoolReturns201AndTheStoredPool(t *testing.T) {
 func TestCreateThenGetThenListThenDelete(t *testing.T) {
 	srv := newTestServer(t)
 
-	
 	created := decodePool(t, do(t, srv, http.MethodPost, "/api/pools", validPoolBody))
 
-	
 	rec := do(t, srv, http.MethodGet, "/api/pools/"+created.ID, "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /api/pools/%s = %d, want %d", created.ID, rec.Code, http.StatusOK)
@@ -57,7 +55,6 @@ func TestCreateThenGetThenListThenDelete(t *testing.T) {
 		t.Errorf("GET returned %+v, want %+v", got, created)
 	}
 
-	
 	rec = do(t, srv, http.MethodGet, "/api/pools", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /api/pools = %d, want %d", rec.Code, http.StatusOK)
@@ -71,7 +68,6 @@ func TestCreateThenGetThenListThenDelete(t *testing.T) {
 		t.Errorf("listed %s, want %s", list.Pools[0].ID, created.ID)
 	}
 
-	
 	rec = do(t, srv, http.MethodDelete, "/api/pools/"+created.ID, "")
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("DELETE /api/pools/%s = %d, want %d", created.ID, rec.Code, http.StatusNoContent)
@@ -80,7 +76,6 @@ func TestCreateThenGetThenListThenDelete(t *testing.T) {
 		t.Errorf("DELETE body = %q, want empty", rec.Body.String())
 	}
 
-	
 	rec = do(t, srv, http.MethodGet, "/api/pools/"+created.ID, "")
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("GET after delete = %d, want %d", rec.Code, http.StatusNotFound)
@@ -92,8 +87,6 @@ func TestListPoolsIsAnEmptyArrayNotNull(t *testing.T) {
 
 	rec := do(t, srv, http.MethodGet, "/api/pools", "")
 
-	
-	
 	if !strings.Contains(rec.Body.String(), `"pools":[]`) {
 		t.Errorf("body = %q, want an empty array", rec.Body.String())
 	}
@@ -218,8 +211,6 @@ func TestCreatePoolRejectsAnOversizedBody(t *testing.T) {
 func TestGetPoolRejectsAMalformedIdentifier(t *testing.T) {
 	srv := newTestServer(t)
 
-	
-	
 	rec := do(t, srv, http.MethodGet, "/api/pools/not-a-ulid", "")
 
 	if rec.Code != http.StatusBadRequest {
@@ -242,7 +233,7 @@ func TestGetMissingPoolIsA404(t *testing.T) {
 	if body.Error.Code != codeNotFound {
 		t.Errorf("code = %q, want %q", body.Error.Code, codeNotFound)
 	}
-	
+
 	if body.Error.Message != "the requested resource does not exist" {
 		t.Errorf("message = %q, want a generic not-found message", body.Error.Message)
 	}
@@ -263,8 +254,6 @@ func TestDeleteRefusesAPoolThatStillHoldsFiles(t *testing.T) {
 
 	created := decodePool(t, do(t, srv, http.MethodPost, "/api/pools", validPoolBody))
 
-	
-	
 	mustCreateFile(t, store, created.ID, "report.pdf")
 
 	rec := do(t, srv, http.MethodDelete, "/api/pools/"+created.ID, "")
@@ -280,7 +269,6 @@ func TestDeleteRefusesAPoolThatStillHoldsFiles(t *testing.T) {
 		t.Errorf("message = %q, want it to explain the guard", body.Error.Message)
 	}
 
-	
 	if rec := do(t, srv, http.MethodGet, "/api/pools/"+created.ID, ""); rec.Code != http.StatusOK {
 		t.Errorf("pool after refused delete = %d, want %d", rec.Code, http.StatusOK)
 	}
@@ -302,7 +290,7 @@ func TestPoolCapacity(t *testing.T) {
 	if body.PoolID != created.ID {
 		t.Errorf("poolId = %q, want %q", body.PoolID, created.ID)
 	}
-	
+
 	if body.RequiredNodes != 6 || body.MissingNodes != 6 {
 		t.Errorf("nodes = %d required / %d missing, want 6/6", body.RequiredNodes, body.MissingNodes)
 	}

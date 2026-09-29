@@ -1,4 +1,3 @@
-
 package db
 
 import (
@@ -12,17 +11,10 @@ import (
 
 	"github.com/VibolSovichea/distributed-drive/internal/config"
 
-	_ "modernc.org/sqlite" 
+	_ "modernc.org/sqlite"
 )
 
-
 const DriverName = "sqlite"
-
-
-
-
-
-
 
 func Open(ctx context.Context, cfg config.DatabaseConfig) (*sql.DB, error) {
 	if cfg.Path == "" {
@@ -57,17 +49,6 @@ func Open(ctx context.Context, cfg config.DatabaseConfig) (*sql.DB, error) {
 	return sqlDB, nil
 }
 
-
-
-
-
-
-
-
-
-
-
-
 func dsn(cfg config.DatabaseConfig) string {
 	pragmas := []string{
 		"foreign_keys(1)",
@@ -81,13 +62,6 @@ func dsn(cfg config.DatabaseConfig) string {
 		q.Add("_pragma", p)
 	}
 
-	
-	
-	
-	
-	
-	
-	
 	u := url.URL{
 		Scheme:   "file",
 		Path:     filepath.ToSlash(cfg.Path),

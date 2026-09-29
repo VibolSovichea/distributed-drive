@@ -1,9 +1,3 @@
-
-
-
-
-
-
 package metadata
 
 import (
@@ -11,53 +5,31 @@ import (
 	"time"
 )
 
-
-
-
-
-
-
 const (
-	
 	MaxShards = 256
 
-	
-	
-	MinChunkSize = 1 << 20 
+	MinChunkSize = 1 << 20
 
-	
-	
-	
-	MaxChunkSize = 512 << 20 
+	MaxChunkSize = 512 << 20
 
-	
 	MaxNameLength = 128
 )
-
-
 
 type Pool struct {
 	ID   string
 	Name string
 
-	
 	DataChunks int
-	
-	
+
 	ParityChunks int
-	
+
 	ChunkSize int64
-	
-	
-	
+
 	Encrypted bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
-
-
-
 
 func (p Pool) Validate() error {
 	switch {
@@ -83,34 +55,25 @@ func (p Pool) Validate() error {
 	return nil
 }
 
-
-
 func (p Pool) ShardsPerStripe() int {
 	return p.DataChunks + p.ParityChunks
 }
 
-
-
-
-
 type NodeStatus string
 
 const (
-	
 	NodeStatusUnknown NodeStatus = ""
-	
+
 	NodeStatusHealthy NodeStatus = "healthy"
-	
-	
+
 	NodeStatusDegraded NodeStatus = "degraded"
-	
+
 	NodeStatusOffline NodeStatus = "offline"
-	
+
 	NodeStatusFull NodeStatus = "full"
-	
+
 	NodeStatusAuthError NodeStatus = "auth_error"
 )
-
 
 var AllNodeStatuses = []NodeStatus{
 	NodeStatusHealthy,
@@ -119,7 +82,6 @@ var AllNodeStatuses = []NodeStatus{
 	NodeStatusFull,
 	NodeStatusAuthError,
 }
-
 
 func (s NodeStatus) Valid() bool {
 	for _, known := range AllNodeStatuses {
@@ -130,29 +92,19 @@ func (s NodeStatus) Valid() bool {
 	return false
 }
 
-
-
-
 func (s NodeStatus) Usable() bool {
 	return s == NodeStatusHealthy
 }
 
-
-
-
 type Provider string
 
 const (
-	
 	ProviderGoogleDrive Provider = "google_drive"
-	
-	
+
 	ProviderLocalFS Provider = "localfs"
 )
 
-
 var AllProviders = []Provider{ProviderGoogleDrive, ProviderLocalFS}
-
 
 func (p Provider) Valid() bool {
 	for _, known := range AllProviders {
@@ -163,33 +115,25 @@ func (p Provider) Valid() bool {
 	return false
 }
 
-
 type Node struct {
 	ID   string
 	Name string
 
 	Provider Provider
-	
-	
-	
-	
+
 	AccountIdentifier string
 
 	Status NodeStatus
-	
-	
+
 	Capacity int64
-	
+
 	UsedCapacity int64
-	
+
 	LastSeen *time.Time
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
-
-
-
 
 func (n Node) Available() int64 {
 	if n.Capacity <= 0 {
@@ -200,7 +144,6 @@ func (n Node) Available() int64 {
 	}
 	return n.Capacity - n.UsedCapacity
 }
-
 
 func (n Node) Validate() error {
 	switch {
@@ -226,25 +169,19 @@ func (n Node) Validate() error {
 	return nil
 }
 
-
 type FileStatus string
 
 const (
-	
 	FileStatusPending FileStatus = "pending"
-	
+
 	FileStatusUploading FileStatus = "uploading"
-	
-	
+
 	FileStatusCommitted FileStatus = "committed"
-	
-	
-	
+
 	FileStatusDegraded FileStatus = "degraded"
-	
+
 	FileStatusDeleting FileStatus = "deleting"
 )
-
 
 var AllFileStatuses = []FileStatus{
 	FileStatusPending,
@@ -253,7 +190,6 @@ var AllFileStatuses = []FileStatus{
 	FileStatusDegraded,
 	FileStatusDeleting,
 }
-
 
 func (s FileStatus) Valid() bool {
 	for _, known := range AllFileStatuses {
@@ -264,54 +200,41 @@ func (s FileStatus) Valid() bool {
 	return false
 }
 
-
 func (s FileStatus) Complete() bool {
 	return s == FileStatusCommitted || s == FileStatusDegraded
 }
 
-
 type ChunkType string
 
 const (
-	
 	ChunkTypeData ChunkType = "data"
-	
+
 	ChunkTypeParity ChunkType = "parity"
 )
-
 
 func (t ChunkType) Valid() bool {
 	return t == ChunkTypeData || t == ChunkTypeParity
 }
-
 
 type File struct {
 	ID     string
 	PoolID string
 	Name   string
 
-	
 	Size int64
-	
-	
-	
+
 	ContentHash string
 
-	
-	
-	
 	ChunkSize    int64
 	DataChunks   int
 	ParityChunks int
-	
-	
+
 	Encrypted bool
 
 	Status    FileStatus
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
-
 
 func (f File) Validate() error {
 	switch {
@@ -344,12 +267,9 @@ func (f File) Validate() error {
 	return nil
 }
 
-
 func (f File) ShardsPerStripe() int {
 	return f.DataChunks + f.ParityChunks
 }
-
-
 
 func (f File) BytesPerStripe() int64 {
 	if f.DataChunks < 1 || f.ChunkSize <= 0 {
@@ -357,17 +277,6 @@ func (f File) BytesPerStripe() int64 {
 	}
 	return int64(f.DataChunks) * f.ChunkSize
 }
-
-
-
-
-
-
-
-
-
-
-
 
 func (f File) Stripes() int {
 	per := f.BytesPerStripe()
@@ -377,11 +286,6 @@ func (f File) Stripes() int {
 	return int((f.Size + per - 1) / per)
 }
 
-
-
-
-
-
 func (f File) DataShardCount() int {
 	if f.Size == 0 || f.ChunkSize <= 0 {
 		return 0
@@ -389,19 +293,13 @@ func (f File) DataShardCount() int {
 	return int((f.Size + f.ChunkSize - 1) / f.ChunkSize)
 }
 
-
-
 func (f File) ParityShardCount() int {
 	return f.Stripes() * f.ParityChunks
 }
 
-
-
 func (f File) TotalShardCount() int {
 	return f.DataShardCount() + f.ParityShardCount()
 }
-
-
 
 func (f File) LastDataShardSize() int64 {
 	if f.Size == 0 || f.ChunkSize <= 0 {
@@ -413,42 +311,24 @@ func (f File) LastDataShardSize() int64 {
 	return f.ChunkSize
 }
 
-
 type Chunk struct {
 	ID     string
 	FileID string
 	NodeID string
 
-	
-	
-	
-	
-	
-	
-	
 	StripeIndex int
-	
-	
+
 	Index     int
 	ChunkType ChunkType
 
-	
-	
 	RemoteFileID string
 
-	
-	
-	
-	
-	
-	
 	Size int64
-	
+
 	Hash string
 
 	CreatedAt time.Time
 }
-
 
 func (c Chunk) Validate() error {
 	switch {

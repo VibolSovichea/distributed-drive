@@ -1,12 +1,3 @@
-
-
-
-
-
-
-
-
-
 package gdrive
 
 import (
@@ -23,47 +14,20 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-
-
-
-
-
-
 type AuthConfig struct {
-	
 	ClientID     string
 	ClientSecret string
 
-	
-	
 	RedirectURI string
 
-	
-	
-	
-	
 	endpoint oauth2.Endpoint
 }
 
-
-
 const DefaultRedirectURI = "http://127.0.0.1:8088/oauth/callback"
-
 
 const authRequestTimeout = 60 * time.Second
 
-
-
-
-
-
 const authorizeOffline = true
-
-
-
-
-
-
 
 func Authorize(cfg AuthConfig, state string) (string, error) {
 	if err := cfg.validate(); err != nil {
@@ -82,19 +46,15 @@ func Authorize(cfg AuthConfig, state string) (string, error) {
 		"scope":         {DriveScope},
 		"state":         {state},
 		"access_type":   {"offline"},
-		
-		
-		
+
 		"prompt": {"consent"},
 	}
 
 	return cfg.endpointOrDefault().AuthURL + "?" + query.Encode(), nil
 }
 
-
 func NewState() (string, error) {
-	
-	
+
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
 		return "", fmt.Errorf("gdrive: generate authorisation state: %w", err)
@@ -102,17 +62,6 @@ func NewState() (string, error) {
 
 	return base64.RawURLEncoding.EncodeToString(raw), nil
 }
-
-
-
-
-
-
-
-
-
-
-
 
 func Exchange(ctx context.Context, cfg AuthConfig, code, state string) (*oauth2.Token, error) {
 	if err := cfg.validate(); err != nil {
@@ -149,10 +98,6 @@ func (c AuthConfig) validate() error {
 	return nil
 }
 
-
-
-
-
 func (c AuthConfig) oauth2Config() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     c.ClientID,
@@ -162,7 +107,6 @@ func (c AuthConfig) oauth2Config() *oauth2.Config {
 		Endpoint:     c.endpointOrDefault(),
 	}
 }
-
 
 func (c AuthConfig) endpointOrDefault() oauth2.Endpoint {
 	if c.endpoint.TokenURL == "" {

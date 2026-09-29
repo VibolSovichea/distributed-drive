@@ -90,11 +90,6 @@ func (s *Store) UpdateNode(ctx context.Context, node metadata.Node) error {
 	return requireOneRow(res, "update node", "node", node.ID)
 }
 
-
-
-
-
-
 func (s *Store) DeleteNode(ctx context.Context, id string) error {
 	var held int
 	err := s.db.QueryRowContext(ctx,
@@ -112,7 +107,6 @@ func (s *Store) DeleteNode(ctx context.Context, id string) error {
 	}
 	return requireOneRow(res, "delete node", "node", id)
 }
-
 
 type NodeInUseError struct {
 	NodeID string

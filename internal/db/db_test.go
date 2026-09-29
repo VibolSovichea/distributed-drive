@@ -22,7 +22,6 @@ func testConfig(t *testing.T) config.DatabaseConfig {
 	}
 }
 
-
 func openTest(t *testing.T) config.DatabaseConfig {
 	t.Helper()
 
@@ -110,9 +109,6 @@ func TestOpenAppliesPragmas(t *testing.T) {
 	}
 }
 
-
-
-
 func TestOpenEnforcesForeignKeys(t *testing.T) {
 	cfg := testConfig(t)
 	sqlDB, err := Open(t.Context(), cfg)
@@ -188,7 +184,7 @@ func TestOpenRejectsInvalidConfig(t *testing.T) {
 }
 
 func TestOpenFailsWhenParentDirectoryCannotBeCreated(t *testing.T) {
-	
+
 	blocker := filepath.Join(t.TempDir(), "blocker")
 	if err := os.WriteFile(blocker, []byte("not a directory"), 0o600); err != nil {
 		t.Fatalf("write blocker file: %v", err)
@@ -263,14 +259,10 @@ func TestDSNEncodesEveryPragma(t *testing.T) {
 		}
 	}
 
-	
-	
 	if strings.Contains(got, "file://") {
 		t.Errorf("dsn() = %q, want a single slash after the scheme", got)
 	}
 }
-
-
 
 func TestOpenHandlesPathsThatNeedEscaping(t *testing.T) {
 	for _, name := range []string{"with space.db", "with#hash.db", "with?question.db", "with%percent.db"} {

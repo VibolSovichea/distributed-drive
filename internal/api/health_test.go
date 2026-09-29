@@ -29,7 +29,7 @@ func TestHealthIsAlwaysOK(t *testing.T) {
 	if body.Version == "" {
 		t.Error("version is empty, want a value")
 	}
-	
+
 	if len(body.Checks) != 0 {
 		t.Errorf("checks = %v, want none for a liveness probe", body.Checks)
 	}
@@ -55,7 +55,6 @@ func TestReadyReportsTheDatabase(t *testing.T) {
 	}
 }
 
-
 type failingPinger struct{ err error }
 
 func (f failingPinger) Ping(_ context.Context) error { return f.err }
@@ -66,8 +65,6 @@ func TestReadyFailsWhenTheStoreIsUnreachable(t *testing.T) {
 
 	rec := do(t, srv, http.MethodGet, "/health/ready", "")
 
-	
-	
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("GET /health/ready = %d, want %d", rec.Code, http.StatusServiceUnavailable)
 	}
@@ -81,7 +78,7 @@ func TestReadyFailsWhenTheStoreIsUnreachable(t *testing.T) {
 	if body.Checks["database"] != "unreachable" {
 		t.Errorf("checks[database] = %q, want %q", body.Checks["database"], "unreachable")
 	}
-	
+
 	if strings.Contains(rec.Body.String(), "disk on fire") {
 		t.Errorf("body %q leaks the internal error", rec.Body.String())
 	}

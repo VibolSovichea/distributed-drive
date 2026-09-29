@@ -17,7 +17,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/pool"
 )
 
-
 type stubNodes struct {
 	register func(context.Context, node.RegisterInput) (metadata.Node, error)
 	get      func(context.Context, string) (metadata.Node, error)
@@ -121,7 +120,7 @@ func TestRegisterNodeReturns201(t *testing.T) {
 	if body.Status != "healthy" {
 		t.Errorf("status = %q, want healthy", body.Status)
 	}
-	
+
 	if body.Available != 600 {
 		t.Errorf("available = %d, want 600", body.Available)
 	}
@@ -139,8 +138,7 @@ func TestRegisterNodeReturns201WhenTheAccountIsUnauthorised(t *testing.T) {
 	broken.Capacity, broken.UsedCapacity, broken.LastSeen = 0, 0, nil
 
 	stub.register = func(context.Context, node.RegisterInput) (metadata.Node, error) {
-		
-		
+
 		return broken, errors.Join(node.ErrUnauthorized, errors.New("no refresh token"))
 	}
 
@@ -148,8 +146,6 @@ func TestRegisterNodeReturns201WhenTheAccountIsUnauthorised(t *testing.T) {
 	rec := do(t, srv, http.MethodPost, "/api/nodes",
 		`{"name":"drive-1","provider":"google_drive"}`)
 
-	
-	
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("POST /api/nodes = %d, want %d: %s", rec.Code, http.StatusCreated, rec.Body)
 	}
@@ -167,8 +163,6 @@ func TestRegisterNodeReturns201WhenTheAccountIsUnauthorised(t *testing.T) {
 func TestRegisterNodeValidation(t *testing.T) {
 	srv := newNodeServer(t, defaultNodeStub())
 
-	
-	
 	cases := []struct {
 		name string
 		body string
@@ -191,12 +185,10 @@ func TestRegisterNodeValidation(t *testing.T) {
 }
 
 func TestRegisterNodeRejectsAnUnknownProvider(t *testing.T) {
-	
-	
+
 	stub := defaultNodeStub()
 	stub.register = func(context.Context, node.RegisterInput) (metadata.Node, error) {
-		
-		
+
 		return metadata.Node{}, fmt.Errorf("%w: unknown provider %q",
 			metadata.ErrInvalid, "dropbox")
 	}
@@ -209,8 +201,6 @@ func TestRegisterNodeRejectsAnUnknownProvider(t *testing.T) {
 	}
 	assertErrorCode(t, rec, codeBadRequest)
 
-	
-	
 	if msg := errorMessage(t, rec); msg != `unknown provider "dropbox"` {
 		t.Errorf("message = %q, want the rule that was broken", msg)
 	}
@@ -255,8 +245,6 @@ func TestListNodesEmpty(t *testing.T) {
 	srv := newNodeServer(t, stub)
 	rec := do(t, srv, http.MethodGet, "/api/nodes", "")
 
-	
-	
 	if got := rec.Body.String(); got != `{"nodes":[]}` {
 		t.Errorf("body = %s, want an empty array", got)
 	}
@@ -283,9 +271,7 @@ func TestNodeStatusReturns200EvenWhenTheNodeIsUnhealthy(t *testing.T) {
 	offline.Status = metadata.NodeStatusOffline
 
 	stub.check = func(context.Context, string) (metadata.Node, error) {
-		
-		
-		
+
 		return offline, errors.Join(metadata.ErrNotFound, errors.New("unreachable"))
 	}
 
@@ -318,8 +304,6 @@ func TestCheckAllNodesReturnsPartialResults(t *testing.T) {
 	srv := newNodeServer(t, stub)
 	rec := do(t, srv, http.MethodPost, "/api/nodes/check", "")
 
-	
-	
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d: %s", rec.Code, http.StatusOK, rec.Body)
 	}
@@ -367,8 +351,6 @@ func TestAttachNodeToPool(t *testing.T) {
 		t.Errorf("the service received pool=%q node=%q", gotPool, gotNode)
 	}
 
-	
-	
 	var body struct {
 		Node     nodeResponse  `json:"node"`
 		Capacity pool.Capacity `json:"capacity"`
@@ -401,8 +383,6 @@ func TestDetachNodeHoldingDataIs409(t *testing.T) {
 	rec := do(t, srv, http.MethodDelete,
 		"/api/pools/01HQ0000000000000000000AA/nodes/01HQ000000000000000000001", "")
 
-	
-	
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("status = %d, want %d: %s", rec.Code, http.StatusConflict, rec.Body)
 	}
@@ -440,8 +420,7 @@ func TestListPoolNodes(t *testing.T) {
 }
 
 func TestNodeRoutesAreAbsentWithoutTheService(t *testing.T) {
-	
-	
+
 	srv := newStubServer(t, nil, baseStub())
 
 	for _, target := range []string{"/api/nodes", "/api/pools/01HQ0000000000000000000AA/nodes"} {

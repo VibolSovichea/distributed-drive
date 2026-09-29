@@ -9,16 +9,12 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
-
 func shardData(k, m, width int) [][]byte {
 	shards := make([][]byte, k+m)
 	for i := range shards {
 		buf := make([]byte, width)
 		for j := range buf {
-			
-			
+
 			x := uint32(i*2654435761) ^ uint32(j*2246822519)
 			x ^= x >> 13
 			x *= 2654435761
@@ -28,8 +24,6 @@ func shardData(k, m, width int) [][]byte {
 	}
 	return shards
 }
-
-
 
 func cloneShards(shards [][]byte) [][]byte {
 	out := make([][]byte, len(shards))
@@ -41,9 +35,6 @@ func cloneShards(shards [][]byte) [][]byte {
 	}
 	return out
 }
-
-
-
 
 func sameShards(a, b [][]byte) bool {
 	if len(a) != len(b) {
@@ -60,9 +51,6 @@ func sameShards(a, b [][]byte) bool {
 	return true
 }
 
-
-
-
 func TestRecoverFromEveryLossUpToM(t *testing.T) {
 	t.Parallel()
 
@@ -77,7 +65,6 @@ func TestRecoverFromEveryLossUpToM(t *testing.T) {
 		t.Fatalf("Encode: %v", err)
 	}
 
-	
 	for lost := range k + m {
 		t.Run(fmt.Sprintf("one missing/index=%d", lost), func(t *testing.T) {
 			shards := cloneShards(reference)
@@ -92,7 +79,6 @@ func TestRecoverFromEveryLossUpToM(t *testing.T) {
 		})
 	}
 
-	
 	for a := range k + m {
 		for b := a + 1; b < k+m; b++ {
 			t.Run(fmt.Sprintf("two missing/%d+%d", a, b), func(t *testing.T) {
@@ -110,8 +96,6 @@ func TestRecoverFromEveryLossUpToM(t *testing.T) {
 		}
 	}
 
-	
-	
 	t.Run("three missing is refused", func(t *testing.T) {
 		shards := cloneShards(reference)
 		shards[0] = nil
@@ -122,8 +106,7 @@ func TestRecoverFromEveryLossUpToM(t *testing.T) {
 		if !errors.Is(err, ErrTooFewShards) {
 			t.Fatalf("Reconstruct error = %v, want ErrTooFewShards", err)
 		}
-		
-		
+
 		for i, shard := range shards {
 			if i < 3 {
 				continue
@@ -149,10 +132,6 @@ func TestRecoverFromEveryCombinationOfDataAndParityLoss(t *testing.T) {
 		t.Fatalf("Encode: %v", err)
 	}
 
-	
-	
-	
-	
 	cases := []struct {
 		name string
 		lost []int
@@ -183,10 +162,6 @@ func TestRecoverFromEveryCombinationOfDataAndParityLoss(t *testing.T) {
 	}
 }
 
-
-
-
-
 func TestReconstructRebuildsMissingParity(t *testing.T) {
 	t.Parallel()
 
@@ -201,8 +176,6 @@ func TestReconstructRebuildsMissingParity(t *testing.T) {
 		t.Fatalf("Encode: %v", err)
 	}
 
-	
-	
 	shards := cloneShards(reference)
 	shards[2] = nil
 	shards[k] = nil
@@ -221,8 +194,6 @@ func TestReconstructRebuildsMissingParity(t *testing.T) {
 		t.Error("the rebuilt stripe differs from the original")
 	}
 
-	
-	
 	ok, err := codec.Verify(shards)
 	if err != nil {
 		t.Fatalf("Verify: %v", err)
@@ -245,8 +216,6 @@ func TestReconstructIsANoOpWhenNothingIsMissing(t *testing.T) {
 		t.Fatalf("Encode: %v", err)
 	}
 
-	
-	
 	before := cloneShards(shards)
 	if err := codec.Reconstruct(shards); err != nil {
 		t.Fatalf("Reconstruct with nothing missing: %v", err)
@@ -269,8 +238,6 @@ func TestReconstructTreatsZeroLengthAsMissing(t *testing.T) {
 		t.Fatalf("Encode: %v", err)
 	}
 
-	
-	
 	shards := cloneShards(reference)
 	shards[1] = []byte{}
 
@@ -294,8 +261,6 @@ func TestReconstructRefusesWhenNothingSurvives(t *testing.T) {
 		shards[i] = nil
 	}
 
-	
-	
 	if err := codec.Reconstruct(shards); !errors.Is(err, ErrNoShardsPresent) {
 		t.Errorf("Reconstruct error = %v, want ErrNoShardsPresent", err)
 	}
@@ -322,8 +287,6 @@ func TestVerifyDetectsAFlippedBit(t *testing.T) {
 		t.Fatal("a freshly encoded stripe must verify")
 	}
 
-	
-	
 	shards[1][17] ^= 0x01
 	ok, err = codec.Verify(shards)
 	if err != nil {
@@ -390,8 +353,6 @@ func TestEncodeRejectsUnequalShardSizes(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 
-	
-	
 	shards := shardData(4, 2, 128)
 	shards[3] = make([]byte, 64)
 	if err := codec.Encode(shards); !errors.Is(err, ErrShardSize) {
@@ -441,8 +402,6 @@ func TestEncodeLeavesTheDataShardsAlone(t *testing.T) {
 		t.Fatalf("Encode: %v", err)
 	}
 
-	
-	
 	for i := range before {
 		if !bytes.Equal(shards[i], before[i]) {
 			t.Errorf("Encode modified data shard %d", i)
@@ -453,10 +412,6 @@ func TestEncodeLeavesTheDataShardsAlone(t *testing.T) {
 func TestAZeroLengthStripeIsRefusedWithAClearError(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
 	codec, err := New(Params{Data: 4, Parity: 2})
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -487,15 +442,12 @@ func TestAllocReturnsAFullyShapedZeroedSlice(t *testing.T) {
 		if len(shard) != 256 {
 			t.Errorf("shard %d is %d bytes, want 256", i, len(shard))
 		}
-		
-		
+
 		if !bytes.Equal(shard, make([]byte, 256)) {
 			t.Errorf("shard %d is not zeroed", i)
 		}
 	}
 
-	
-	
 	codec, err := New(p)
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -504,8 +456,6 @@ func TestAllocReturnsAFullyShapedZeroedSlice(t *testing.T) {
 		t.Errorf("Encode of an Alloc slice: %v", err)
 	}
 
-	
-	
 	if got := p.Alloc(0); got != nil {
 		t.Errorf("Alloc(0) = %v, want nil", got)
 	}
@@ -521,8 +471,7 @@ func TestParamsArithmetic(t *testing.T) {
 	if got, want := p.Shards(), 6; got != want {
 		t.Errorf("Shards() = %d, want %d", got, want)
 	}
-	
-	
+
 	if got, want := p.Tolerates(), 2; got != want {
 		t.Errorf("Tolerates() = %d, want %d", got, want)
 	}
@@ -536,9 +485,6 @@ func TestParamsArithmetic(t *testing.T) {
 func TestNoParityMeansNoRecovery(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	codec, err := New(Params{Data: 4, Parity: 0})
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -554,12 +500,6 @@ func TestNoParityMeansNoRecovery(t *testing.T) {
 	}
 }
 
-
-
-
-
-
-
 func TestMaxShardsAgreesWithTheDomainModel(t *testing.T) {
 	t.Parallel()
 
@@ -572,9 +512,6 @@ func TestMaxShardsAgreesWithTheDomainModel(t *testing.T) {
 func TestCodecIsSafeForConcurrentUse(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	const k, m, width = 4, 2, 4096
 	codec, err := New(Params{Data: k, Parity: m})
 	if err != nil {
@@ -613,9 +550,6 @@ func TestCodecIsSafeForConcurrentUse(t *testing.T) {
 func TestDifferentWidthsRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	const k, m = 4, 2
 	for _, width := range []int{1, 2, 7, 31, 32, 33, 63, 64, 65, 1000, 4096} {
 		codec, err := New(Params{Data: k, Parity: m})

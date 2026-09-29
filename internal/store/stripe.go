@@ -10,38 +10,13 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
 type LoadedStripe struct {
-	
-	
-	
-	
 	Shards [][]byte
 
-	
-	
-	
-	
-	
-	
-	
 	Rebuilt []int
 }
 
-
 func (l LoadedStripe) Healthy() bool { return len(l.Rebuilt) == 0 }
-
-
-
-
-
-
-
-
-
-
-
 
 func (s *Store) LoadStripe(
 	ctx context.Context,
@@ -58,8 +33,6 @@ func (s *Store) LoadStripe(
 	return loadStripe(ctx, sess, s.cipher, file, params, codec, group, stripeIndex)
 }
 
-
-
 func loadStripe(
 	ctx context.Context,
 	sess *session,
@@ -73,7 +46,6 @@ func loadStripe(
 	width := int(file.ChunkSize)
 	shards := params.Alloc(width)
 
-	
 	var fileKey []byte
 	if cipher.Enabled() && file.Encrypted {
 		key, err := crypto.DeriveKey(cipher.MasterKey, file.ID)
@@ -83,30 +55,23 @@ func loadStripe(
 		fileKey = key
 	}
 
-	
-	
-	
 	fetched := make([]bool, len(shards))
-	
-	
+
 	unusable := make([]bool, len(shards))
-	
-	
-	
-	
+
 	verified := make([]bool, len(shards))
-	
+
 	var rebuilt []int
 
 	for range params.Parity + 1 {
-		
+
 		for i := range shards {
 			if unusable[i] || fetched[i] {
 				continue
 			}
 			chunk := group[i]
 			if chunk.RemoteFileID == "" {
-				
+
 				unusable[i] = true
 				continue
 			}
@@ -117,7 +82,6 @@ func loadStripe(
 			fetched[i] = true
 		}
 
-		
 		for i := range shards {
 			if unusable[i] || !fetched[i] || verified[i] {
 				continue
@@ -140,14 +104,12 @@ func loadStripe(
 		case condemned == 0:
 			return LoadedStripe{Shards: shards, Rebuilt: rebuilt}, nil
 		case condemned > params.Parity:
-			
+
 			return LoadedStripe{}, fmt.Errorf(
 				"%w: a stripe of file %s has %d unusable shards, and only %d can be rebuilt",
 				ErrTooFewShards, file.ID, condemned, params.Parity)
 		}
 
-		
-		
 		for i := range shards {
 			if unusable[i] {
 				shards[i] = nil
@@ -156,14 +118,7 @@ func loadStripe(
 		if err := codec.Reconstruct(shards); err != nil {
 			return LoadedStripe{}, fmt.Errorf("store: rebuild a stripe of file %s: %w", file.ID, err)
 		}
-		
-		
-		
-		
-		
-		
-		
-		
+
 		for i := range shards {
 			if unusable[i] {
 				unusable[i] = false
@@ -178,16 +133,6 @@ func loadStripe(
 		"%w: a stripe of file %s still fails its checksums after reconstruction",
 		ErrFileCorrupt, file.ID)
 }
-
-
-
-
-
-
-
-
-
-
 
 func fetchShard(
 	ctx context.Context,
@@ -210,11 +155,8 @@ func fetchShard(
 	}
 	defer reader.Close()
 
-	
-	
-	
 	if cipher.Enabled() && file.Encrypted && len(fileKey) > 0 {
-		
+
 		ciphertext := make([]byte, len(buf)+cipher.Cipher.Overhead())
 		if _, err := readFull(ctx, reader, ciphertext); err != nil {
 			return 0, err

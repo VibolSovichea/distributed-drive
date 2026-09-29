@@ -32,9 +32,7 @@ func TestNewIsUnique(t *testing.T) {
 }
 
 func TestNewIsMonotonicWithinAMillisecond(t *testing.T) {
-	
-	
-	
+
 	const n = 5_000
 
 	prev := New()

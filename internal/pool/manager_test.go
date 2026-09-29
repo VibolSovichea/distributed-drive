@@ -11,15 +11,11 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
-
 type fakeStore struct {
 	pools map[string]metadata.Pool
 	nodes map[string][]metadata.Node
 	files map[string][]metadata.File
-	
-	
+
 	allNodes     map[string]metadata.Node
 	chunksByNode map[string][]metadata.Chunk
 	calls        []string
@@ -89,7 +85,6 @@ func (f *fakeStore) ListPoolFiles(_ context.Context, poolID string) ([]metadata.
 	f.calls = append(f.calls, "ListPoolFiles:"+poolID)
 	return f.files[poolID], nil
 }
-
 
 func (f *fakeStore) addNode(n metadata.Node) metadata.Node {
 	if n.ID == "" {
@@ -235,8 +230,6 @@ func TestGetRejectsAMalformedIdentifier(t *testing.T) {
 	store := newFakeStore()
 	svc := NewManager(store, nil)
 
-	
-	
 	_, err := svc.Get(t.Context(), "../../etc/passwd")
 	if !errors.Is(err, metadata.ErrInvalid) {
 		t.Errorf("Get() error = %v, want it to wrap metadata.ErrInvalid", err)
@@ -272,7 +265,6 @@ func TestDeleteRefusesAPoolThatStillHoldsFiles(t *testing.T) {
 		t.Errorf("Delete() error = %v, want it to wrap ErrNotEmpty", err)
 	}
 
-	
 	if _, ok := store.pools[created.ID]; !ok {
 		t.Error("Delete() removed the pool even though it reported ErrNotEmpty")
 	}
@@ -319,8 +311,6 @@ func TestCapacityReportsShortfallAndTheEmptyNodeLimit(t *testing.T) {
 		t.Fatalf("Create() error = %v, want nil", err)
 	}
 
-	
-	
 	store.nodes[created.ID] = []metadata.Node{
 		{ID: "n1", Capacity: 100, UsedCapacity: 50},
 		{ID: "n2", Capacity: 100, UsedCapacity: 10},
@@ -391,7 +381,7 @@ func TestCapacityIgnoresNodesWithUnknownSize(t *testing.T) {
 	}
 	store.nodes[created.ID] = []metadata.Node{
 		{ID: "n1", Capacity: 100, UsedCapacity: 25},
-		{ID: "n2", Capacity: 0, UsedCapacity: 0}, 
+		{ID: "n2", Capacity: 0, UsedCapacity: 0},
 	}
 
 	got, err := svc.Capacity(t.Context(), created.ID)
@@ -408,7 +398,7 @@ func TestCapacityIgnoresNodesWithUnknownSize(t *testing.T) {
 	if want := int64(100); got.TotalBytes != want {
 		t.Errorf("TotalBytes = %d, want %d: an unknown capacity must not be counted", got.TotalBytes, want)
 	}
-	
+
 	if want := int64(75); got.LogicalCapacity != want {
 		t.Errorf("LogicalCapacity = %d, want %d", got.LogicalCapacity, want)
 	}

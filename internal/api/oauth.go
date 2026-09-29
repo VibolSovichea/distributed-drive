@@ -10,28 +10,19 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/authflow"
 )
 
-
 type OAuthService interface {
-	
 	Start(ctx context.Context, nodeID string) (string, error)
-	
+
 	Complete(ctx context.Context, code, state string) error
 }
 
-
 type authorizeResponse struct {
 	NodeID string `json:"nodeId"`
-	
-	
-	
-	
-	
+
 	URL string `json:"authorizationUrl"`
-	
-	
+
 	ExpiresIn int `json:"expiresInSeconds"`
 }
-
 
 func (s *Server) handleStartAuthorization(w http.ResponseWriter, r *http.Request) {
 	nodeID := chi.URLParam(r, "nodeID")
@@ -54,18 +45,9 @@ func (s *Server) handleStartAuthorization(w http.ResponseWriter, r *http.Request
 	})
 }
 
-
-
-
-
-
-
-
 func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	
-	
 	if denied := query.Get("error"); denied != "" {
 		s.writeError(w, r, http.StatusBadRequest, codeBadRequest,
 			"the provider did not grant access: "+sanitiseProviderError(denied))
@@ -94,17 +76,10 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusOK, map[string]string{"status": "authorised"})
 }
 
-
-
-
-
-
 func (s *Server) writeOAuthError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, authflow.ErrUnknownState):
-		
-		
-		
+
 		s.writeError(w, r, http.StatusGone, codeBadRequest,
 			"this authorisation link has already been used or does not exist; start a new one")
 	case errors.Is(err, authflow.ErrStateExpired):
@@ -117,11 +92,6 @@ func (s *Server) writeOAuthError(w http.ResponseWriter, r *http.Request, err err
 		s.writeServiceError(w, r, err)
 	}
 }
-
-
-
-
-
 
 func sanitiseProviderError(raw string) string {
 	const maxLen = 64

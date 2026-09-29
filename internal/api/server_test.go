@@ -20,8 +20,6 @@ func quietServer(t *testing.T) *Server {
 func TestListenAndServeDrainsOnContextCancellation(t *testing.T) {
 	srv := quietServer(t)
 
-	
-	
 	addr := reserveAddr(t)
 
 	ctx, cancel := context.WithCancel(t.Context())
@@ -29,8 +27,6 @@ func TestListenAndServeDrainsOnContextCancellation(t *testing.T) {
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.ListenAndServe(ctx, addr, 2*time.Second) }()
 
-	
-	
 	waitForServer(t, addr)
 
 	cancel()
@@ -44,8 +40,6 @@ func TestListenAndServeDrainsOnContextCancellation(t *testing.T) {
 		t.Fatal("ListenAndServe() did not return after the context was cancelled")
 	}
 
-	
-	
 	probe, err := net.Listen("tcp", addr)
 	if err != nil {
 		t.Fatalf("the address is still bound after shutdown: %v", err)
@@ -82,9 +76,6 @@ func TestListenAndServeFinishesInFlightRequestsBeforeReturning(t *testing.T) {
 	<-entered
 	cancel()
 
-	
-	
-	
 	time.Sleep(200 * time.Millisecond)
 	close(release)
 
@@ -101,8 +92,6 @@ func TestListenAndServeFinishesInFlightRequestsBeforeReturning(t *testing.T) {
 func TestListenAndServeReportsABindFailure(t *testing.T) {
 	srv := quietServer(t)
 
-	
-	
 	blocker, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("reserving a port: %v", err)
@@ -128,8 +117,6 @@ func TestACancelledRequestIsNotAnErrorResponse(t *testing.T) {
 
 	rec := do(t, srv, http.MethodGet, "/api/pools", "")
 
-	
-	
 	if rec.Body.Len() != 0 {
 		t.Errorf("body = %q, want nothing written for a cancelled request", rec.Body.String())
 	}
@@ -173,7 +160,6 @@ func TestVersionIsReportedAndOverridable(t *testing.T) {
 	}
 }
 
-
 func reserveAddr(t *testing.T) string {
 	t.Helper()
 
@@ -188,7 +174,6 @@ func reserveAddr(t *testing.T) string {
 
 	return addr
 }
-
 
 func waitForServer(t *testing.T, addr string) {
 	t.Helper()

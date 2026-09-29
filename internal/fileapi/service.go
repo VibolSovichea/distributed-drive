@@ -1,8 +1,3 @@
-
-
-
-
-
 package fileapi
 
 import (
@@ -14,16 +9,12 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/store"
 )
 
-
-
-const maxUploadSize = 10 << 30 
-
+const maxUploadSize = 10 << 30
 
 type MetaStore interface {
 	GetFile(ctx context.Context, id string) (metadata.File, error)
 	ListPoolFiles(ctx context.Context, poolID string) ([]metadata.File, error)
 }
-
 
 type Store interface {
 	Upload(ctx context.Context, in store.UploadInput) (metadata.File, error)
@@ -35,7 +26,6 @@ type Store interface {
 	SweepAbandoned(ctx context.Context, olderThan time.Duration) (int, error)
 }
 
-
 type service struct {
 	meta MetaStore
 	st   Store
@@ -44,7 +34,6 @@ type service struct {
 func newService(meta MetaStore, st Store) Service {
 	return &service{meta: meta, st: st}
 }
-
 
 type Service interface {
 	Upload(ctx context.Context, poolID, name string, src io.Reader, size int64) (metadata.File, error)

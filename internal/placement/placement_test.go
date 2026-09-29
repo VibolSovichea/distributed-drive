@@ -10,7 +10,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
 func node(id string, capacity, used int64) metadata.Node {
 	return metadata.Node{
 		ID:           id,
@@ -20,7 +19,6 @@ func node(id string, capacity, used int64) metadata.Node {
 	}
 }
 
-
 func nodes(n int) []metadata.Node {
 	out := make([]metadata.Node, 0, n)
 	for i := range n {
@@ -29,7 +27,6 @@ func nodes(n int) []metadata.Node {
 	return out
 }
 
-
 func shards(stripe, count int, size int64) []Shard {
 	out := make([]Shard, 0, count)
 	for i := range count {
@@ -37,7 +34,6 @@ func shards(stripe, count int, size int64) []Shard {
 	}
 	return out
 }
-
 
 func target(got []Assignment) []string {
 	out := make([]string, 0, len(got))
@@ -50,7 +46,6 @@ func target(got []Assignment) []string {
 func TestOneStripeLandsOnDistinctNodes(t *testing.T) {
 	t.Parallel()
 
-	
 	got, err := Plan(Request{Shards: shards(0, 6, 10), Nodes: nodes(6)})
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
@@ -69,8 +64,6 @@ func TestOneStripeLandsOnDistinctNodes(t *testing.T) {
 func TestTwoShardsOfOneStripeNeverShareANode(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	for _, stripeSize := range []int{2, 3, 6, 10, 17} {
 		for _, extra := range []int{0, 1, 5} {
 			pool := stripeSize + extra
@@ -92,10 +85,6 @@ func TestTwoShardsOfOneStripeNeverShareANode(t *testing.T) {
 func TestInterleavedStripesStillGetDistinctNodes(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
 	var mixed []Shard
 	for stripe := range 5 {
 		mixed = append(mixed, shards(stripe, 6, 10)...)
@@ -135,9 +124,6 @@ func TestPlanIsIndependentOfInputOrder(t *testing.T) {
 		t.Fatalf("Plan: %v", err)
 	}
 
-	
-	
-	
 	rng := rand.New(rand.NewSource(7))
 	for range 50 {
 		shuffled := slices.Clone(base)
@@ -158,13 +144,6 @@ func TestPlanIsIndependentOfInputOrder(t *testing.T) {
 func TestRotatesStripesWhenThePoolIsLargerThanAStripe(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
-	
-	
-	
 	got, err := Plan(Request{
 		Shards: append(shards(0, 6, 10), shards(1, 6, 10)...),
 		Nodes:  nodes(9),
@@ -187,8 +166,6 @@ func TestRotatesStripesWhenThePoolIsLargerThanAStripe(t *testing.T) {
 func TestEveryNodeInAPoolSizedExactlyToAStripeIsUsed(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	got, err := Plan(Request{
 		Shards: append(shards(0, 6, 10), shards(1, 6, 10)...),
 		Nodes:  nodes(6),
@@ -241,11 +218,6 @@ func TestDegradedAndUncheckedNodesAreUsedOnlyWhenHealthyOnesRunOut(t *testing.T)
 	pool[0].Status = metadata.NodeStatusDegraded
 	pool[1].Status = metadata.NodeStatusUnknown
 
-	
-	
-	
-	
-	
 	got, err := Plan(Request{Shards: shards(0, 6, 10), Nodes: pool})
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
@@ -258,10 +230,6 @@ func TestDegradedAndUncheckedNodesAreUsedOnlyWhenHealthyOnesRunOut(t *testing.T)
 func TestHealthyIsPreferredOverDegradedRegardlessOfFreeSpace(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
 	pool := nodes(3)
 	pool[0].Status = metadata.NodeStatusDegraded
 	pool[0].Capacity = 10_000_000
@@ -273,9 +241,7 @@ func TestHealthyIsPreferredOverDegradedRegardlessOfFreeSpace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
 	}
-	
-	
-	
+
 	if !slices.Equal(target(got), []string{"n3", "n2"}) {
 		t.Errorf("targets = %v, want the two healthy nodes ahead of the degraded one", target(got))
 	}
@@ -301,8 +267,6 @@ func TestMoreFreeSpaceIsPreferred(t *testing.T) {
 func TestEqualCapacityFallsBackToNodeID(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	got, err := Plan(Request{Shards: shards(0, 6, 10), Nodes: nodes(6)})
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
@@ -330,9 +294,6 @@ func TestAFullNodeIsSkippedForANodeWithRoom(t *testing.T) {
 func TestUnknownCapacityIsUsableButFullIsNot(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	pool := nodes(2)
 	pool[0].Capacity, pool[0].UsedCapacity = 0, 0
 
@@ -344,8 +305,6 @@ func TestUnknownCapacityIsUsableButFullIsNot(t *testing.T) {
 		t.Errorf("targets = %v, want the no-quota node used", target(got))
 	}
 
-	
-	
 	_, err = Plan(Request{Shards: shards(0, 2, 10), Nodes: pool, StrictCapacity: true})
 	if !errors.Is(err, ErrNoNodeTakesShard) {
 		t.Errorf("err = %v, want ErrNoNodeTakesShard", err)
@@ -355,8 +314,6 @@ func TestUnknownCapacityIsUsableButFullIsNot(t *testing.T) {
 func TestANodeTooSmallForTheShardIsSkipped(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	pool := nodes(4)
 	pool[0].Capacity, pool[0].UsedCapacity = 100, 95
 
@@ -386,9 +343,6 @@ func TestNoNodeHasRoomForTheShard(t *testing.T) {
 func TestTooFewNodesForAStripe(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	_, err := Plan(Request{Shards: shards(0, 6, 10), Nodes: nodes(5)})
 	if !errors.Is(err, ErrNotEnoughNodes) {
 		t.Errorf("err = %v, want ErrNotEnoughNodes", err)
@@ -398,7 +352,6 @@ func TestTooFewNodesForAStripe(t *testing.T) {
 func TestAvoidedNodesAreSkipped(t *testing.T) {
 	t.Parallel()
 
-	
 	got, err := Plan(Request{
 		Shards: shards(0, 3, 10),
 		Nodes:  nodes(5),
@@ -415,9 +368,6 @@ func TestAvoidedNodesAreSkipped(t *testing.T) {
 func TestAvoidingEveryNodeIsAnError(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	all := map[string]bool{"n1": true}
 	for i := 2; i <= 6; i++ {
 		all[fmt.Sprintf("n%d", i)] = true
@@ -457,9 +407,7 @@ func TestRejectsMalformedRequests(t *testing.T) {
 			Nodes: nodes(6),
 		},
 		"stripes of different sizes": {
-			
-			
-			
+
 			Shards: append(shards(0, 6, 10), shards(1, 4, 10)...),
 			Nodes:  nodes(6),
 		},
@@ -479,8 +427,6 @@ func TestRejectsMalformedRequests(t *testing.T) {
 func TestEveryAssignmentKeepsItsShardIdentity(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	want := append(shards(0, 6, 10), shards(1, 6, 20)...)
 	want[9].Size = 33
 
@@ -490,7 +436,7 @@ func TestEveryAssignmentKeepsItsShardIdentity(t *testing.T) {
 	}
 
 	for i, a := range got {
-		
+
 		if a.NodeID == "" {
 			t.Errorf("assignment %d has no node", i)
 		}
@@ -518,10 +464,6 @@ func TestEveryAssignmentKeepsItsShardIdentity(t *testing.T) {
 func TestAZeroByteShardStillNeedsItsOwnNode(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
 	got, err := Plan(Request{
 		Shards: []Shard{
 			{Stripe: 0, Index: 0, Size: 10},
@@ -540,11 +482,6 @@ func TestAZeroByteShardStillNeedsItsOwnNode(t *testing.T) {
 func TestAZeroSizedShardStillSkipsAFullNode(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
-	
 	pool := nodes(3)
 	pool[0].Capacity, pool[0].UsedCapacity = 100, 100
 

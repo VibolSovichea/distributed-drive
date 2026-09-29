@@ -5,25 +5,15 @@ import (
 	"time"
 )
 
-
-
-
-
 type healthBody struct {
 	Status  string `json:"status"`
 	Version string `json:"version"`
 	Time    string `json:"time"`
-	
+
 	Checks map[string]string `json:"checks,omitempty"`
 }
 
-
 var version = "dev"
-
-
-
-
-
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusOK, healthBody{
@@ -32,12 +22,6 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		Time:    s.now().Format(time.RFC3339),
 	})
 }
-
-
-
-
-
-
 
 func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 	body := healthBody{

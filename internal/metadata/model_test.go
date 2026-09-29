@@ -421,10 +421,6 @@ func TestChunkValidate(t *testing.T) {
 	}
 }
 
-
-
-
-
 func TestFileDataShardCount(t *testing.T) {
 	const chunkSize = int64(1 << 20)
 
@@ -451,15 +447,10 @@ func TestFileDataShardCount(t *testing.T) {
 	}
 }
 
-
-
-
-
 func TestFileShardCountsSpanEveryStripe(t *testing.T) {
 	const chunkSize = int64(1 << 20)
 	const k, m = 4, 2
 
-	
 	file := File{Size: 1000 * (1 << 20), ChunkSize: chunkSize, DataChunks: k, ParityChunks: m}
 
 	if got, want := file.Stripes(), 250; got != want {
@@ -475,8 +466,6 @@ func TestFileShardCountsSpanEveryStripe(t *testing.T) {
 		t.Errorf("TotalShardCount() = %d, want %d", got, want)
 	}
 
-	
-	
 	if want := file.Stripes() * k; file.DataShardCount() < want-1 {
 		t.Errorf("DataShardCount() = %d is fewer than the %d full stripes imply",
 			file.DataShardCount(), file.Stripes())
@@ -517,8 +506,7 @@ func TestBytesPerStripeAndAnEmptyFileHasNothing(t *testing.T) {
 	if got, want := file.BytesPerStripe(), int64(4<<20); got != want {
 		t.Errorf("BytesPerStripe() = %d, want %d", got, want)
 	}
-	
-	
+
 	if got := file.TotalShardCount(); got != 0 {
 		t.Errorf("TotalShardCount() = %d, want 0 for an empty file", got)
 	}
@@ -553,7 +541,7 @@ func TestFileLastDataShardSize(t *testing.T) {
 }
 
 func TestFileShardHelpersTolerateAnUnsetChunkSize(t *testing.T) {
-	
+
 	file := File{Size: 1000}
 
 	if got := file.DataShardCount(); got != 0 {
@@ -570,8 +558,6 @@ func TestFileShardsPerStripe(t *testing.T) {
 		t.Errorf("ShardsPerStripe() = %d, want 6", got)
 	}
 }
-
-
 
 func TestLastDataShardSizeRoundTrips(t *testing.T) {
 	const chunkSize = int64(1 << 20)
@@ -591,8 +577,7 @@ func TestLastDataShardSizeRoundTrips(t *testing.T) {
 }
 
 func TestNodeLastSeenIsAPointer(t *testing.T) {
-	
-	
+
 	never := Node{}
 	if never.LastSeen != nil {
 		t.Error("a zero Node has a non-nil LastSeen, want nil")

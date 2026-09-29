@@ -9,8 +9,6 @@ import (
 	"testing"
 )
 
-
-
 const testSize int64 = 1024
 
 func newSplitter(t *testing.T, size int64) *Splitter {
@@ -22,7 +20,6 @@ func newSplitter(t *testing.T, size int64) *Splitter {
 	}
 	return s
 }
-
 
 func drain(t *testing.T, s *Splitter, r io.Reader) ([]byte, int64) {
 	t.Helper()
@@ -49,8 +46,6 @@ func drain(t *testing.T, s *Splitter, r io.Reader) ([]byte, int64) {
 func TestEmptyFileProducesNoChunks(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	got, total := drain(t, newSplitter(t, testSize), strings.NewReader(""))
 	if len(got) != 0 {
 		t.Errorf("got %d bytes, want none", len(got))
@@ -110,8 +105,6 @@ func TestPartialFinalChunk(t *testing.T) {
 func TestOneByteMoreThanAChunk(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	payload := bytes.Repeat([]byte("z"), int(testSize)+1)
 	s := newSplitter(t, testSize)
 
@@ -127,8 +120,6 @@ func TestOneByteMoreThanAChunk(t *testing.T) {
 func TestEveryChunkIsHashed(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	payload := variedBytes(int(testSize) * 2)
 	payload = append(payload, bytes.Repeat([]byte("h"), 9)...)
 	s := newSplitter(t, testSize)
@@ -144,8 +135,6 @@ func TestEveryChunkIsHashed(t *testing.T) {
 			t.Fatalf("Next: %v", err)
 		}
 
-		
-		
 		if want := Hash(chunk.Data); chunk.SHA256 != want {
 			t.Errorf("chunk %d hash = %s, want %s", chunk.Index, chunk.SHA256, want)
 		}
@@ -159,8 +148,6 @@ func TestEveryChunkIsHashed(t *testing.T) {
 	}
 }
 
-
-
 func variedBytes(length int) []byte {
 	out := make([]byte, length)
 	for i := range out {
@@ -172,9 +159,6 @@ func variedBytes(length int) []byte {
 func TestIdenticalChunksHashIdentically(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	s := newSplitter(t, testSize)
 	r := bytes.NewReader(bytes.Repeat([]byte("k"), int(testSize)*2))
 
@@ -213,7 +197,6 @@ func TestIndexesAreStableAcrossRuns(t *testing.T) {
 	}
 }
 
-
 func indexAndHashes(t *testing.T, payload []byte) []string {
 	t.Helper()
 
@@ -236,8 +219,6 @@ func indexAndHashes(t *testing.T, payload []byte) []string {
 func TestChunkDataIsOnlyValidUntilTheNextRead(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	payload := bytes.Repeat([]byte("a"), int(testSize)*2)
 	s := newSplitter(t, testSize)
 	r := bytes.NewReader(payload)
@@ -252,9 +233,6 @@ func TestChunkDataIsOnlyValidUntilTheNextRead(t *testing.T) {
 		t.Fatalf("Next: %v", err)
 	}
 
-	
-	
-	
 	if first.SHA256 != firstHash {
 		t.Error("the recorded hash changed, which would make it untrustworthy")
 	}
@@ -263,9 +241,6 @@ func TestChunkDataIsOnlyValidUntilTheNextRead(t *testing.T) {
 func TestLargeFileStreamsWithoutBufferingItAll(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	const size = 40 << 20
 	generated := &repeatingReader{remaining: size, fill: 'q'}
 
@@ -290,7 +265,6 @@ func TestLargeFileStreamsWithoutBufferingItAll(t *testing.T) {
 		t.Errorf("chunks = %d, want %d", s.Count(), want)
 	}
 }
-
 
 type repeatingReader struct {
 	remaining int64

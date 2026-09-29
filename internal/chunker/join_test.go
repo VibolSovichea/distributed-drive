@@ -8,13 +8,11 @@ import (
 	"testing"
 )
 
-
 type memorySource struct {
 	chunks map[int64][]byte
-	
-	
+
 	corrupt map[int64][]byte
-	
+
 	failOn map[int64]error
 	opened []int64
 }
@@ -34,7 +32,6 @@ func (m *memorySource) Open(index int64) (io.ReadCloser, error) {
 	}
 	return io.NopCloser(bytes.NewReader(data)), nil
 }
-
 
 func splitToPlan(t *testing.T, payload []byte, size int64) (*memorySource, []Descriptor) {
 	t.Helper()
@@ -56,8 +53,7 @@ func splitToPlan(t *testing.T, payload []byte, size int64) (*memorySource, []Des
 		if err != nil {
 			t.Fatalf("Next: %v", err)
 		}
-		
-		
+
 		src.chunks[chunk.Index] = append([]byte(nil), chunk.Data...)
 		plan = append(plan, Descriptor{
 			Index:  chunk.Index,
@@ -74,8 +70,6 @@ func TestJoinReassemblesInIndexOrder(t *testing.T) {
 	payload = append(payload, bytes.Repeat([]byte("t"), 250)...)
 	src, plan := splitToPlan(t, payload, testSize)
 
-	
-	
 	for i, j := 0, len(plan)-1; i < j; i, j = i+1, j-1 {
 		plan[i], plan[j] = plan[j], plan[i]
 	}
@@ -104,7 +98,6 @@ func TestJoinRejectsACorruptChunk(t *testing.T) {
 	payload := variedBytes(int(testSize) * 3)
 	src, plan := splitToPlan(t, payload, testSize)
 
-	
 	altered := append([]byte(nil), src.chunks[1]...)
 	altered[0] ^= 0xff
 	src.corrupt[1] = altered
@@ -119,7 +112,7 @@ func TestJoinRejectsACorruptChunk(t *testing.T) {
 	if !errors.Is(err, ErrCorrupt) {
 		t.Fatalf("error = %v, want ErrCorrupt", err)
 	}
-	
+
 	if !strings.Contains(err.Error(), "chunk 1") {
 		t.Errorf("error = %v, want it to name chunk 1", err)
 	}
@@ -131,8 +124,6 @@ func TestJoinRejectsATruncatedChunk(t *testing.T) {
 	payload := variedBytes(int(testSize) * 2)
 	src, plan := splitToPlan(t, payload, testSize)
 
-	
-	
 	src.corrupt[1] = src.chunks[1][:len(src.chunks[1])-10]
 
 	joiner, err := NewJoiner(src, plan)
@@ -172,9 +163,6 @@ func TestJoinRejectsAGapInThePlan(t *testing.T) {
 	payload := variedBytes(int(testSize) * 4)
 	_, plan := splitToPlan(t, payload, testSize)
 
-	
-	
-	
 	gapped := append(plan[:1:1], plan[2:]...)
 
 	_, err := NewJoiner(mustSource(t, payload, testSize), gapped)
@@ -222,8 +210,6 @@ func TestJoinSkipsVerificationWhenNoHashIsStored(t *testing.T) {
 	payload := variedBytes(int(testSize))
 	src, plan := splitToPlan(t, payload, testSize)
 
-	
-	
 	plan[0].SHA256 = ""
 
 	joiner, err := NewJoiner(src, plan)
@@ -244,8 +230,6 @@ func TestJoinSkipsVerificationWhenNoHashIsStored(t *testing.T) {
 func TestJoinReadsInSmallPieces(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	payload := variedBytes(int(testSize)*2 + 77)
 	src, plan := splitToPlan(t, payload, testSize)
 
@@ -256,7 +240,7 @@ func TestJoinReadsInSmallPieces(t *testing.T) {
 	defer func() { _ = joiner.Close() }()
 
 	var out bytes.Buffer
-	buf := make([]byte, 7) 
+	buf := make([]byte, 7)
 	for {
 		n, err := joiner.Read(buf)
 		out.Write(buf[:n])
@@ -294,7 +278,7 @@ func TestJoinCloseIsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewJoiner: %v", err)
 	}
-	
+
 	if _, err := joiner.Read(make([]byte, 10)); err != nil {
 		t.Fatalf("Read: %v", err)
 	}
@@ -333,7 +317,6 @@ func TestSourceFuncAdaptsAFunction(t *testing.T) {
 		t.Errorf("opened %d chunks, want 1", opened)
 	}
 }
-
 
 func mustSource(t *testing.T, payload []byte, size int64) *memorySource {
 	t.Helper()

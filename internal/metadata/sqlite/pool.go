@@ -19,8 +19,6 @@ const (
 
 	selectPoolByNameSQL = `SELECT ` + poolColumns + ` FROM pools WHERE name = ?`
 
-	
-	
 	listPoolsSQL = `SELECT ` + poolColumns + ` FROM pools ORDER BY id ASC`
 
 	updatePoolSQL = `UPDATE pools
@@ -115,8 +113,6 @@ func (s *Store) DeletePool(ctx context.Context, id string) error {
 	return requireOneRow(res, "delete pool", "pool", id)
 }
 
-
-
 type scanner interface {
 	Scan(dest ...any) error
 }
@@ -142,15 +138,10 @@ func scanPool(row scanner) (metadata.Pool, error) {
 	return pool, nil
 }
 
-
-
-
-
 func requireOneRow(res sql.Result, op, entity, id string) error {
 	affected, err := res.RowsAffected()
 	if err != nil {
-		
-		
+
 		return nil
 	}
 	if affected == 0 {
@@ -158,7 +149,6 @@ func requireOneRow(res sql.Result, op, entity, id string) error {
 	}
 	return nil
 }
-
 
 func boolToInt(b bool) int {
 	if b {

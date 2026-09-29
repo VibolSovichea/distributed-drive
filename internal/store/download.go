@@ -16,23 +16,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 func (s *Store) Download(ctx context.Context, fileID string) (io.ReadCloser, error) {
 	file, err := s.meta.GetFile(ctx, fileID)
 	if err != nil {
@@ -70,14 +53,6 @@ func (s *Store) Download(ctx context.Context, fileID string) (io.ReadCloser, err
 		sess:    newSession(s.nodes, s.meta),
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
 	plan := make([]chunker.Descriptor, 0, len(stripes)*file.DataChunks)
 	for stripeIndex := range stripes {
 		for i := range file.DataChunks {
@@ -97,19 +72,10 @@ func (s *Store) Download(ctx context.Context, fileID string) (io.ReadCloser, err
 		inner:  joiner,
 		digest: sha256.New(),
 		want:   file.ContentHash,
-		
-		
-		
-		
+
 		onComplete: func() { s.markIntact(ctx, file) },
 	}, nil
 }
-
-
-
-
-
-
 
 func (s *Store) markIntact(ctx context.Context, file metadata.File) {
 	if file.Status != metadata.FileStatusDegraded {
@@ -119,17 +85,6 @@ func (s *Store) markIntact(ctx context.Context, file metadata.File) {
 	file.UpdatedAt = s.now()
 	_ = s.meta.UpdateFile(ctx, file)
 }
-
-
-
-
-
-
-
-
-
-
-
 
 func indexStripes(file metadata.File, chunks []metadata.Chunk) ([][]metadata.Chunk, error) {
 	perStripe := file.DataChunks + file.ParityChunks
@@ -186,13 +141,7 @@ func indexStripes(file metadata.File, chunks []metadata.Chunk) ([][]metadata.Chu
 	return out, nil
 }
 
-
-
 type download struct {
-	
-	
-	
-	
 	ctx     context.Context
 	store   *Store
 	file    metadata.File
@@ -201,18 +150,10 @@ type download struct {
 	codec   ec.Codec
 	sess    *session
 
-	
-	
-	
-	
 	mu     sync.Mutex
 	held   int
 	shards [][]byte
 }
-
-
-
-
 
 func (d *download) Open(index int64) (io.ReadCloser, error) {
 	stripeIndex := int(index) / d.file.DataChunks
@@ -235,7 +176,6 @@ func (d *download) Open(index int64) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(data)), nil
 }
 
-
 func (d *download) load(stripeIndex int) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -254,26 +194,22 @@ func (d *download) load(stripeIndex int) error {
 	return nil
 }
 
-
-
 type verifyingReader struct {
 	inner  io.ReadCloser
 	digest hash.Hash
 	want   string
 
 	onComplete func()
-	
-	
+
 	eofSeen bool
-	
+
 	closed bool
 }
-
 
 func (r *verifyingReader) Read(p []byte) (int, error) {
 	n, err := r.inner.Read(p)
 	if n > 0 {
-		
+
 		r.digest.Write(p[:n])
 	}
 
@@ -283,9 +219,7 @@ func (r *verifyingReader) Read(p []byte) (int, error) {
 
 	if !r.eofSeen {
 		r.eofSeen = true
-		
-		
-		
+
 		if r.want != "" {
 			if got := hex.EncodeToString(r.digest.Sum(nil)); got != r.want {
 				return n, fmt.Errorf("%w: got sha256 %s, want %s", ErrFileCorrupt, got, r.want)
@@ -299,11 +233,6 @@ func (r *verifyingReader) Read(p []byte) (int, error) {
 
 	return n, io.EOF
 }
-
-
-
-
-
 
 func (r *verifyingReader) Close() error {
 	if r.closed {

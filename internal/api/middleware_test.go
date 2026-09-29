@@ -15,9 +15,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/pool"
 )
 
-
-
-
 type stubPools struct {
 	create func(context.Context, pool.CreateInput) (metadata.Pool, error)
 	get    func(context.Context, string) (metadata.Pool, error)
@@ -83,8 +80,6 @@ type okPinger struct{}
 
 func (okPinger) Ping(context.Context) error { return nil }
 
-
-
 func neverCalled(name string) error {
 	panic("stubPools." + name + " called but not configured")
 }
@@ -129,8 +124,7 @@ func TestRequestIDIsEchoedBackAndAccepted(t *testing.T) {
 }
 
 func TestRequestIDIsReplacedWhenUntrustworthy(t *testing.T) {
-	
-	
+
 	hostile := "abc\r\nlevel=error msg=\"forged\""
 
 	srv := newStubServer(t, nil, baseStub())
@@ -204,14 +198,14 @@ func TestPanicInAHandlerBecomesA500(t *testing.T) {
 	if body.Error.Code != codeInternal {
 		t.Errorf("code = %q, want %q", body.Error.Code, codeInternal)
 	}
-	
+
 	if strings.Contains(rec.Body.String(), "a defect") {
 		t.Errorf("body %q leaks the panic value", rec.Body.String())
 	}
 	if strings.Contains(rec.Body.String(), "goroutine") {
 		t.Errorf("body %q leaks a stack trace", rec.Body.String())
 	}
-	
+
 	if !strings.Contains(logs.String(), "a defect, not a client error") {
 		t.Errorf("logs = %q, want the panic value recorded", logs.String())
 	}
@@ -221,8 +215,7 @@ func TestPanicInAHandlerBecomesA500(t *testing.T) {
 }
 
 func TestServerKeepsServingAfterAPanic(t *testing.T) {
-	
-	
+
 	stub := baseStub()
 	fail := true
 	stub.get = func(_ context.Context, id string) (metadata.Pool, error) {
@@ -291,8 +284,6 @@ func TestEveryErrorCarriesTheRequestID(t *testing.T) {
 	var body errorBody
 	decode(t, rec, &body)
 
-	
-	
 	if body.Error.RequestID != "trace-xyz" {
 		t.Errorf("requestId = %q, want %q", body.Error.RequestID, "trace-xyz")
 	}
@@ -339,7 +330,6 @@ func TestClientErrorsLogAtWarnAndServerErrorsAtError(t *testing.T) {
 func TestForwardedForIsOnlyBelievedFromLoopback(t *testing.T) {
 	srv := newStubServer(t, nil, baseStub())
 
-	
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	req.RemoteAddr = "203.0.113.9:5555"
 	req.Header.Set("X-Forwarded-For", "10.1.2.3")
@@ -356,7 +346,6 @@ func TestForwardedForIsOnlyBelievedFromLoopback(t *testing.T) {
 		t.Errorf("RemoteAddr = %q, want the direct address to be kept", seen)
 	}
 
-	
 	req = httptest.NewRequest(http.MethodGet, "/health", nil)
 	req.RemoteAddr = "127.0.0.1:5555"
 	req.Header.Set("X-Forwarded-For", "10.1.2.3, 10.9.9.9")
@@ -386,7 +375,7 @@ func TestFirstForwarded(t *testing.T) {
 }
 
 func TestPublicMessageStripsTheSentinelPrefix(t *testing.T) {
-	
+
 	raw := metadata.ErrInvalid.Error() + ": chunk size must be at least 1048576 bytes, got 1"
 
 	if got := publicMessage(errors.New(raw)); got != "chunk size must be at least 1048576 bytes, got 1" {
@@ -398,8 +387,7 @@ func TestPublicMessageStripsTheSentinelPrefix(t *testing.T) {
 }
 
 func TestCapacityResponseUsesCamelCase(t *testing.T) {
-	
-	
+
 	body, err := json.Marshal(pool.Capacity{
 		PoolID: "p1", Nodes: 6, RequiredNodes: 6, MissingNodes: 0,
 		KnownNodes: 6, TotalBytes: 600, UsedBytes: 210, AvailableBytes: 390,

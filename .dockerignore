@@ -1,0 +1,9 @@
+.git
+.gitignore
+README.md
+bin/
+*.md
+.env
+.env.*
+coverage.txt
+coverage.html

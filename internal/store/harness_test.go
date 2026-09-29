@@ -18,22 +18,15 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
 type fakeNode struct {
 	mu      sync.Mutex
 	objects map[string][]byte
 	seq     int
 
-	
-	
 	failWrite bool
-	
-	
+
 	failRead map[string]error
-	
-	
+
 	corrupt map[string][]byte
 
 	uploaded int
@@ -60,8 +53,7 @@ func (f *fakeNode) Upload(_ context.Context, r io.Reader, meta provider.ObjectMe
 	if err != nil {
 		return provider.RemoteObject{}, err
 	}
-	
-	
+
 	if meta.Size > 0 && int64(len(body)) != meta.Size {
 		return provider.RemoteObject{}, fmt.Errorf("fake: got %d bytes, promised %d", len(body), meta.Size)
 	}
@@ -122,14 +114,11 @@ func (f *fakeNode) Identity(context.Context) (provider.Identity, error) {
 	return provider.Identity{AccountID: "fake"}, nil
 }
 
-
-
 func (f *fakeNode) live() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return len(f.objects)
 }
-
 
 type fakeResolver struct {
 	nodes map[string]*fakeNode
@@ -142,8 +131,6 @@ func (r fakeResolver) Open(_ context.Context, n metadata.Node) (provider.Storage
 	}
 	return node, nil
 }
-
-
 
 type harness struct {
 	store *Store
@@ -184,8 +171,7 @@ func newHarness(t *testing.T, opts harnessOpts) *harness {
 	for i := range opts.nodes {
 		id := fmt.Sprintf("node-%d", i+1)
 		nodes[id] = newFakeNode()
-		
-		
+
 		if err := meta.CreateNode(ctx, metadata.Node{
 			ID:                id,
 			Name:              id,
@@ -216,8 +202,6 @@ func newHarness(t *testing.T, opts harnessOpts) *harness {
 		}
 	}
 
-	
-	
 	var seq int
 	st, err := New(Options{
 		Meta:             meta,
@@ -232,7 +216,6 @@ func newHarness(t *testing.T, opts harnessOpts) *harness {
 
 	return &harness{store: st, meta: meta, nodes: nodes, pool: pool, now: time.Unix(1700000000, 0).UTC()}
 }
-
 
 func (h *harness) upload(t *testing.T, name string, body []byte) metadata.File {
 	t.Helper()
@@ -249,7 +232,6 @@ func (h *harness) upload(t *testing.T, name string, body []byte) metadata.File {
 	return file
 }
 
-
 func (h *harness) download(t *testing.T, fileID string) ([]byte, error) {
 	t.Helper()
 
@@ -261,7 +243,6 @@ func (h *harness) download(t *testing.T, fileID string) ([]byte, error) {
 	return io.ReadAll(reader)
 }
 
-
 func (h *harness) chunks(t *testing.T, fileID string) []metadata.Chunk {
 	t.Helper()
 
@@ -272,8 +253,6 @@ func (h *harness) chunks(t *testing.T, fileID string) []metadata.Chunk {
 	return got
 }
 
-
-
 func (h *harness) take(t *testing.T, chunk metadata.Chunk) {
 	t.Helper()
 
@@ -282,8 +261,6 @@ func (h *harness) take(t *testing.T, chunk metadata.Chunk) {
 	defer node.mu.Unlock()
 	delete(node.objects, chunk.RemoteFileID)
 }
-
-
 
 func (h *harness) scramble(t *testing.T, chunk metadata.Chunk) {
 	t.Helper()
@@ -298,8 +275,6 @@ func (h *harness) scramble(t *testing.T, chunk metadata.Chunk) {
 	}
 	node.corrupt[chunk.RemoteFileID] = wrong
 }
-
-
 
 func pattern(size int64, seed byte) []byte {
 	out := make([]byte, size)

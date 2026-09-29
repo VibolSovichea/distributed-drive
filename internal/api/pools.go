@@ -12,19 +12,13 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/pool"
 )
 
-
-
-
-
-
-
 type poolResponse struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
 	DataChunks   int    `json:"dataChunks"`
 	ParityChunks int    `json:"parityChunks"`
 	ChunkSize    int64  `json:"chunkSize"`
-	
+
 	ShardsPerStripe int    `json:"shardsPerStripe"`
 	Redundancy      string `json:"redundancy"`
 	CreatedAt       string `json:"createdAt"`
@@ -45,14 +39,9 @@ func newPoolResponse(p metadata.Pool) poolResponse {
 	}
 }
 
-
-
 func redundancy(p metadata.Pool) string {
 	return strconv.Itoa(p.DataChunks) + "+" + strconv.Itoa(p.ParityChunks)
 }
-
-
-
 
 type createPoolRequest struct {
 	Name         string `json:"name"`
@@ -61,12 +50,10 @@ type createPoolRequest struct {
 	ChunkSize    int64  `json:"chunkSize"`
 }
 
-
 type listPoolsResponse struct {
 	Pools []poolResponse `json:"pools"`
 	Count int            `json:"count"`
 }
-
 
 func (s *Server) handleCreatePool(w http.ResponseWriter, r *http.Request) {
 	var req createPoolRequest
@@ -93,7 +80,6 @@ func (s *Server) handleCreatePool(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusCreated, newPoolResponse(created))
 }
 
-
 func (s *Server) handleListPools(w http.ResponseWriter, r *http.Request) {
 	pools, err := s.pools.List(r.Context())
 	if err != nil {
@@ -101,8 +87,6 @@ func (s *Server) handleListPools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-	
 	body := listPoolsResponse{Pools: make([]poolResponse, 0, len(pools))}
 	for _, p := range pools {
 		body.Pools = append(body.Pools, newPoolResponse(p))
@@ -111,7 +95,6 @@ func (s *Server) handleListPools(w http.ResponseWriter, r *http.Request) {
 
 	s.writeJSON(w, r, http.StatusOK, body)
 }
-
 
 func (s *Server) handleGetPool(w http.ResponseWriter, r *http.Request) {
 	found, err := s.pools.Get(r.Context(), chi.URLParam(r, "poolID"))
@@ -123,7 +106,6 @@ func (s *Server) handleGetPool(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusOK, newPoolResponse(found))
 }
 
-
 func (s *Server) handleDeletePool(w http.ResponseWriter, r *http.Request) {
 	poolID := chi.URLParam(r, "poolID")
 
@@ -134,10 +116,8 @@ func (s *Server) handleDeletePool(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.InfoContext(r.Context(), "pool deleted", "poolId", poolID)
 
-	
 	w.WriteHeader(http.StatusNoContent)
 }
-
 
 func (s *Server) handlePoolCapacity(w http.ResponseWriter, r *http.Request) {
 	capacity, err := s.pools.Capacity(r.Context(), chi.URLParam(r, "poolID"))
@@ -148,11 +128,6 @@ func (s *Server) handlePoolCapacity(w http.ResponseWriter, r *http.Request) {
 
 	s.writeJSON(w, r, http.StatusOK, capacity)
 }
-
-
-
-
-
 
 func (s *Server) writeDecodeError(w http.ResponseWriter, r *http.Request, err error) {
 	var tooLarge *http.MaxBytesError

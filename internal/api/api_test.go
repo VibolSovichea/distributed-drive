@@ -20,19 +20,12 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/pool"
 )
 
-
-
-
-
-
 func newTestServer(t *testing.T) *Server {
 	t.Helper()
 
 	srv, _ := newTestServerAndStore(t)
 	return srv
 }
-
-
 
 func newTestServerAndStore(t *testing.T) (*Server, *metastoresqlite.Store) {
 	t.Helper()
@@ -53,8 +46,6 @@ func newTestServerAndStore(t *testing.T) (*Server, *metastoresqlite.Store) {
 
 	return srv, store
 }
-
-
 
 func mustCreateFile(t *testing.T, store *metastoresqlite.Store, poolID, name string) metadata.File {
 	t.Helper()
@@ -101,7 +92,6 @@ func openTestDB(t *testing.T) *sql.DB {
 	return handle
 }
 
-
 func do(t *testing.T, srv *Server, method, target, body string) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -120,7 +110,6 @@ func do(t *testing.T, srv *Server, method, target, body string) *httptest.Respon
 
 	return rec
 }
-
 
 func decode(t *testing.T, rec *httptest.ResponseRecorder, dst any) {
 	t.Helper()
