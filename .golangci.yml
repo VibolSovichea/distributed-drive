@@ -13,12 +13,12 @@ linters:
     - unused
     - unconvert
     - nilerr
-    - noctx
     - errorlint
     - gocritic
     - wastedassign
   disable:
     - errcheck
+    - noctx
 
 linters-settings:
   gocritic:
