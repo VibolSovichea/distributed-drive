@@ -37,7 +37,6 @@ func TestNewAppliesMigrationsAndServesTheHealthEndpoint(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = application.Close() })
 
-	
 	req := httptest.NewRequest(http.MethodPost, "/api/pools",
 		strings.NewReader(`{"name":"primary","dataChunks":4,"parityChunks":2,"chunkSize":8388608}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -49,7 +48,6 @@ func TestNewAppliesMigrationsAndServesTheHealthEndpoint(t *testing.T) {
 		t.Fatalf("POST /api/pools = %d, want %d: %s", rec.Code, http.StatusCreated, rec.Body)
 	}
 
-	
 	rec = httptest.NewRecorder()
 	application.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health/ready", nil))
 
@@ -61,9 +59,6 @@ func TestNewAppliesMigrationsAndServesTheHealthEndpoint(t *testing.T) {
 func TestNewIsIdempotentAcrossRestarts(t *testing.T) {
 	cfg := testConfig(t)
 
-	
-	
-	
 	available, err := migrate.Available()
 	if err != nil {
 		t.Fatalf("migrate.Available() error = %v, want nil", err)
@@ -84,8 +79,6 @@ func TestNewIsIdempotentAcrossRestarts(t *testing.T) {
 		t.Fatalf("Close() error = %v, want nil", err)
 	}
 
-	
-	
 	second, err := New(t.Context(), cfg, discardLogger())
 	if err != nil {
 		t.Fatalf("second New() error = %v, want nil", err)
@@ -107,8 +100,6 @@ func TestNewWithoutMigrateOnOpenRejectsAnUnmigratedDatabase(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = application.Close() })
 
-	
-	
 	rec := httptest.NewRecorder()
 	application.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/pools", nil))
 
@@ -127,8 +118,7 @@ func TestCloseIsIdempotent(t *testing.T) {
 	if err := application.Close(); err != nil {
 		t.Fatalf("first Close() error = %v, want nil", err)
 	}
-	
-	
+
 	if err := application.Close(); err != nil {
 		t.Errorf("second Close() error = %v, want nil", err)
 	}
@@ -147,7 +137,6 @@ func TestRunDrainsOnContextCancellation(t *testing.T) {
 	errCh := make(chan error, 1)
 	go func() { errCh <- application.Run(ctx) }()
 
-	
 	time.Sleep(100 * time.Millisecond)
 	cancel()
 
@@ -163,8 +152,7 @@ func TestRunDrainsOnContextCancellation(t *testing.T) {
 
 func TestRunOnAnUnusableAddressFails(t *testing.T) {
 	cfg := testConfig(t)
-	
-	
+
 	cfg.HTTP.Addr = "127.0.0.1:1"
 
 	application, err := New(t.Context(), cfg, discardLogger())

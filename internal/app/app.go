@@ -1,9 +1,3 @@
-
-
-
-
-
-
 package app
 
 import (
@@ -31,10 +25,7 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/pool"
 )
 
-
-
 const shutdownGrace = 5 * time.Second
-
 
 type App struct {
 	cfg    config.Config
@@ -46,15 +37,8 @@ type App struct {
 	nodes node.Service
 	auth  *authflow.Service
 
-	
-	
-	
 	migrations int
 }
-
-
-
-
 
 func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, error) {
 	if logger == nil {
@@ -69,15 +53,12 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 	}
 	app.db = handle
 
-	
-	
-	
 	app.store = metastoresqlite.New(handle)
 
 	if cfg.Database.MigrateOnOpen {
 		applied, err := migrate.New(handle).Up(ctx)
 		if err != nil {
-			
+
 			_ = app.Close()
 			return nil, fmt.Errorf("app: apply migrations: %w", err)
 		}
@@ -106,14 +87,6 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 
 	return app, nil
 }
-
-
-
-
-
-
-
-
 
 func (a *App) buildStorageServices() (node.Service, *authflow.Service, error) {
 	if !a.cfg.Storage.AnyProviderEnabled() {
@@ -149,28 +122,13 @@ func (a *App) buildStorageServices() (node.Service, *authflow.Service, error) {
 	return svc, auth, nil
 }
 
-
-
-
-
-
 type appStore struct{ metadata.Store }
-
 
 func (a *App) appStore() appStore { return appStore{a.store} }
 
-
-
 func (a *App) Handler() http.Handler { return a.api.Handler() }
 
-
-
 func (a *App) Store() metadata.Store { return a.store }
-
-
-
-
-
 
 func (a *App) Run(ctx context.Context) error {
 	defer func() { _ = a.Close() }()
@@ -200,7 +158,6 @@ func (a *App) Run(ctx context.Context) error {
 		a.logger.Info("shutdown signal received", logging.Duration("timeout", a.cfg.HTTP.ShutdownTimeout))
 	}
 
-	
 	select {
 	case err := <-errCh:
 		if err != nil {
@@ -215,8 +172,6 @@ func (a *App) Run(ctx context.Context) error {
 	return nil
 }
 
-
-
 func (a *App) Close() error {
 	if a.store == nil {
 		return nil
@@ -230,8 +185,6 @@ func (a *App) Close() error {
 	return nil
 }
 
-
-
 func Run(ctx context.Context) error {
 	cfg, err := config.Load()
 	if err != nil {
@@ -240,8 +193,6 @@ func Run(ctx context.Context) error {
 
 	logger := logging.New(logWriter(), cfg.Logging.Level, cfg.Logging.Format)
 
-	
-	
 	application, err := New(ctx, cfg, logger)
 	if err != nil {
 		logger.Error("startup failed", "error", err)

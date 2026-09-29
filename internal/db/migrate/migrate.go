@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 package migrate
 
 import (
@@ -20,13 +12,10 @@ import (
 	"strings"
 )
 
-
 //go:embed migrations/*
 var migrationsFS embed.FS
 
-
 const migrationsDir = "migrations"
-
 
 const TableName = "schema_migrations"
 
@@ -37,20 +26,15 @@ CREATE TABLE IF NOT EXISTS ` + TableName + ` (
     applied_at  INTEGER NOT NULL
 )`
 
-
 type Migration struct {
 	Version int64
 	Name    string
 	SQL     string
 }
 
-
 func (m Migration) String() string {
 	return fmt.Sprintf("%04d_%s", m.Version, m.Name)
 }
-
-
-
 
 type ErrNoMigration struct {
 	Path string
@@ -63,16 +47,13 @@ func (e *ErrNoMigration) Error() string {
 
 func (e *ErrNoMigration) Unwrap() error { return e.Err }
 
-
 type Migrator struct {
 	db *sql.DB
 }
 
-
 func New(db *sql.DB) *Migrator {
 	return &Migrator{db: db}
 }
-
 
 func Available() ([]Migration, error) {
 	entries, err := fs.ReadDir(migrationsFS, migrationsDir)
@@ -114,7 +95,6 @@ func Available() ([]Migration, error) {
 	return out, nil
 }
 
-
 func parseFileName(fileName string) (int64, string, error) {
 	base := strings.TrimSuffix(fileName, ".sql")
 
@@ -133,9 +113,6 @@ func parseFileName(fileName string) (int64, string, error) {
 
 	return version, name, nil
 }
-
-
-
 
 func (m *Migrator) Up(ctx context.Context) (int, error) {
 	if err := m.ensureTable(ctx); err != nil {
@@ -165,8 +142,6 @@ func (m *Migrator) Up(ctx context.Context) (int, error) {
 
 	return count, nil
 }
-
-
 
 func (m *Migrator) Version(ctx context.Context) (int64, error) {
 	if err := m.ensureTable(ctx); err != nil {
@@ -213,9 +188,6 @@ func (m *Migrator) appliedVersions(ctx context.Context) (map[int64]bool, error) 
 	}
 	return applied, nil
 }
-
-
-
 
 func (m *Migrator) apply(ctx context.Context, mig Migration) error {
 	tx, err := m.db.BeginTx(ctx, nil)

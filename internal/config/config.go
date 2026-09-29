@@ -1,6 +1,3 @@
-
-
-
 package config
 
 import (
@@ -13,10 +10,7 @@ import (
 	"time"
 )
 
-
-
 const EnvPrefix = "DD_"
-
 
 type HTTPConfig struct {
 	Addr              string
@@ -27,7 +21,6 @@ type HTTPConfig struct {
 	ReadHeaderTimeout time.Duration
 }
 
-
 type DatabaseConfig struct {
 	Path          string
 	BusyTimeout   time.Duration
@@ -35,38 +28,18 @@ type DatabaseConfig struct {
 	MigrateOnOpen bool
 }
 
-
 type StorageConfig struct {
-	
-	
-	
 	TokenDir string
 
-	
-	
-	
-	
-	
 	TokenEncryptionKey string
 
-	
-	
-	
 	GoogleClientID     string
 	GoogleClientSecret string
-	
+
 	GoogleRedirectURI string
 
-	
-	
-	
 	LocalNodeRoot string
 }
-
-
-
-
-
 
 func (s StorageConfig) GoogleEnabled() bool {
 	return strings.TrimSpace(s.TokenDir) != "" &&
@@ -75,17 +48,14 @@ func (s StorageConfig) GoogleEnabled() bool {
 		strings.TrimSpace(s.GoogleClientSecret) != ""
 }
 
-
 func (s StorageConfig) AnyProviderEnabled() bool {
 	return s.GoogleEnabled() || strings.TrimSpace(s.LocalNodeRoot) != ""
 }
-
 
 type LoggingConfig struct {
 	Level  string
 	Format string
 }
-
 
 type Config struct {
 	HTTP     HTTPConfig
@@ -94,15 +64,12 @@ type Config struct {
 	Logging  LoggingConfig
 }
 
-
-
-
 func Defaults() Config {
 	return Config{
 		HTTP: HTTPConfig{
 			Addr:              ":8080",
 			ReadTimeout:       30 * time.Second,
-			WriteTimeout:      0, 
+			WriteTimeout:      0,
 			IdleTimeout:       120 * time.Second,
 			ShutdownTimeout:   15 * time.Second,
 			ReadHeaderTimeout: 10 * time.Second,
@@ -114,8 +81,7 @@ func Defaults() Config {
 			MigrateOnOpen: true,
 		},
 		Storage: StorageConfig{
-			
-			
+
 			TokenDir: filepath.Join("data", "tokens"),
 		},
 		Logging: LoggingConfig{
@@ -125,12 +91,9 @@ func Defaults() Config {
 	}
 }
 
-
-
 func Load() (Config, error) {
 	return loadFrom(os.LookupEnv)
 }
-
 
 type lookupFunc func(key string) (string, bool)
 
@@ -244,10 +207,8 @@ func (c Config) validate() []error {
 	return errs
 }
 
-
-
 func (c Config) String() string {
-	
+
 	return fmt.Sprintf(
 		"http{addr:%s read_timeout:%s write_timeout:%s idle_timeout:%s shutdown_timeout:%s} "+
 			"database{path:%s busy_timeout:%s max_open_conns:%d migrate_on_open:%t} "+

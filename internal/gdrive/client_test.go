@@ -19,38 +19,22 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
-
-
-
 type fakeDrive struct {
 	mu sync.Mutex
 
-	
 	files map[string][]byte
 
-	
 	sessions map[string]*fakeSession
 
-	
 	quota    quotaResponse
 	identity identityResponse
 
-	
 	nextID int
 
-	
-	
 	requests map[string]int
 
-	
 	failNextChunks int
 
-	
-	
-	
 	nextSessionLoseAt   int
 	nextSessionExpireAt int
 }
@@ -69,23 +53,18 @@ type identityResponse struct {
 }
 
 type fakeSession struct {
-	
 	received []byte
-	
+
 	declared string
-	
-	
+
 	startTotal string
-	
+
 	chunks int
-	
-	
-	
+
 	loseAt int
-	
-	
+
 	expireAt int
-	
+
 	finished bool
 }
 
@@ -106,7 +85,6 @@ func (f *fakeDrive) reset() {
 	f.requests = map[string]int{}
 	f.failNextChunks = 0
 }
-
 
 func (f *fakeDrive) start(t *testing.T) *Client {
 	t.Helper()
@@ -142,7 +120,6 @@ func (f *fakeDrive) handler() http.Handler {
 	return mux
 }
 
-
 func (f *fakeDrive) handleFiles(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	f.requests["files"]++
@@ -163,7 +140,6 @@ func (f *fakeDrive) handleFiles(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-
 func (f *fakeDrive) startSession(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -171,9 +147,6 @@ func (f *fakeDrive) startSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-	
-	
 	declared := r.Header.Get("X-Upload-Content-Length")
 	if declared != "" {
 		if n, err := strconv.Atoi(declared); err != nil || n < 0 {
@@ -183,8 +156,6 @@ func (f *fakeDrive) startSession(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	
-	
 	var meta map[string]any
 	if err := json.Unmarshal(body, &meta); err == nil {
 		if _, ok := meta["size"]; ok {
@@ -207,7 +178,6 @@ func (f *fakeDrive) startSession(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Location", path)
 	w.WriteHeader(http.StatusOK)
 }
-
 
 func (f *fakeDrive) handleSession(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
@@ -239,15 +209,11 @@ func (f *fakeDrive) handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	if contentRange == "bytes */*" {
 		f.finishUpload(w, path)
 		return
 	}
 
-	
-	
-	
 	if strings.HasPrefix(contentRange, "bytes */") {
 		f.reportStatus(w, path)
 		return
@@ -259,9 +225,7 @@ func (f *fakeDrive) handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if offset != int64(len(session.received)) {
-		
-		
-		
+
 		w.WriteHeader(http.StatusRequestedRangeNotSatisfiable)
 		return
 	}
@@ -277,15 +241,10 @@ func (f *fakeDrive) handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-	
-	
 	f.mu.Lock()
 	lose := session.loseAt == chunkIndex
 	if session.expireAt == chunkIndex {
-		
-		
-		
+
 		delete(f.sessions, path)
 		f.mu.Unlock()
 		if hj, ok := w.(http.Hijacker); ok {
@@ -299,7 +258,7 @@ func (f *fakeDrive) handleSession(w http.ResponseWriter, r *http.Request) {
 	}
 	f.mu.Unlock()
 	if lose {
-		
+
 		if hj, ok := w.(http.Hijacker); ok {
 			if conn, _, err := hj.Hijack(); err == nil {
 				_ = conn.Close()
@@ -310,11 +269,9 @@ func (f *fakeDrive) handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	w.Header().Set("Range", fmt.Sprintf("bytes=0-%d", last))
 	w.WriteHeader(statusResumeIncomplete)
 }
-
 
 func (f *fakeDrive) reportStatus(w http.ResponseWriter, path string) {
 	f.mu.Lock()
@@ -331,9 +288,7 @@ func (f *fakeDrive) reportStatus(w http.ResponseWriter, path string) {
 	f.mu.Unlock()
 
 	if finished {
-		
-		
-		
+
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		for id, data := range f.files {
@@ -348,7 +303,7 @@ func (f *fakeDrive) reportStatus(w http.ResponseWriter, path string) {
 
 	held := int64(len(session.received))
 	if held == 0 {
-		
+
 		w.WriteHeader(statusResumeIncomplete)
 		return
 	}
@@ -356,7 +311,6 @@ func (f *fakeDrive) reportStatus(w http.ResponseWriter, path string) {
 	w.Header().Set("Range", fmt.Sprintf("bytes=0-%d", held-1))
 	w.WriteHeader(statusResumeIncomplete)
 }
-
 
 func (f *fakeDrive) finishUpload(w http.ResponseWriter, path string) {
 	f.mu.Lock()
@@ -367,16 +321,14 @@ func (f *fakeDrive) finishUpload(w http.ResponseWriter, path string) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	
-	
-	
+
 	declared := session.declared
 	if declared == "" || declared == "*" {
 		declared = session.startTotal
 	}
 	if declared != "" &&
 		strconv.Itoa(len(session.received)) != declared {
-		
+
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -388,7 +340,6 @@ func (f *fakeDrive) finishUpload(w http.ResponseWriter, path string) {
 
 	writeFileJSON(w, id, len(session.received))
 }
-
 
 func writeFileJSON(w http.ResponseWriter, id string, size int) {
 	w.Header().Set("Content-Type", "application/json")
@@ -426,14 +377,12 @@ func parseContentRange(raw string) (offset, last int64, total string, err error)
 	return offset, last, total, nil
 }
 
-
 func (f *fakeDrive) handleFileByID(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	f.requests["file-"+r.Method]++
 
-	
 	id := r.URL.Path
 	if idx := strings.LastIndex(id, "/"); idx >= 0 {
 		id = id[idx+1:]
@@ -499,7 +448,7 @@ func TestUploadKnownSizeRoundTrips(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	payload := bytes.Repeat([]byte("shard"), 1000) 
+	payload := bytes.Repeat([]byte("shard"), 1000)
 
 	obj, err := client.Upload(context.Background(), bytes.NewReader(payload),
 		provider.ObjectMetadata{Name: "shard", Size: int64(len(payload))})
@@ -520,7 +469,6 @@ func TestUploadKnownSizeRoundTrips(t *testing.T) {
 		t.Error("CreatedAt was not parsed")
 	}
 
-	
 	rc, err := client.Download(context.Background(), obj.ID)
 	if err != nil {
 		t.Fatalf("Download: %v", err)
@@ -542,7 +490,6 @@ func TestUploadMultiChunkUsesResumableProtocol(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	
 	payload := bytes.Repeat([]byte("x"), resumableChunkSize+4096)
 
 	obj, err := client.Upload(context.Background(), bytes.NewReader(payload),
@@ -569,9 +516,6 @@ func TestUploadExactChunkMultipleFinalises(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	
-	
-	
 	payload := bytes.Repeat([]byte("y"), resumableChunkSize)
 
 	obj, err := client.Upload(context.Background(), bytes.NewReader(payload),
@@ -592,8 +536,6 @@ func TestUploadUnknownSizeFinalisesWithExplicitRequest(t *testing.T) {
 
 	payload := []byte("a small shard")
 
-	
-	
 	obj, err := client.Upload(context.Background(), bytes.NewReader(payload),
 		provider.ObjectMetadata{})
 	if err != nil {
@@ -626,8 +568,6 @@ func TestUploadShortSourceIsRejected(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	
-	
 	_, err := client.Upload(context.Background(), bytes.NewReader([]byte("0123456789")),
 		provider.ObjectMetadata{Size: 100})
 	if err == nil {
@@ -642,7 +582,7 @@ func TestUploadSessionStartWithoutLocationFails(t *testing.T) {
 	t.Parallel()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK) 
+		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
 
@@ -697,8 +637,6 @@ func TestStatMissingObjectIsNotFoundAndNodeIsHealthy(t *testing.T) {
 		t.Fatalf("error = %v, want ErrNotFound", err)
 	}
 
-	
-	
 	if got := provider.HealthOf(err); got != provider.HealthHealthy {
 		t.Errorf("health = %q, want %q", got, provider.HealthHealthy)
 	}
@@ -724,8 +662,6 @@ func TestDeleteRemovesObject(t *testing.T) {
 		t.Errorf("after Delete, Stat error = %v, want ErrNotFound", err)
 	}
 
-	
-	
 	if err := client.Delete(context.Background(), obj.ID); !errors.Is(err, provider.ErrNotFound) {
 		t.Errorf("second Delete error = %v, want ErrNotFound", err)
 	}
@@ -776,7 +712,6 @@ func TestObjectIDValidation(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	
 	for _, id := range []string{"", "   ", "a/b", "a?b=1", "a#b"} {
 		t.Run(id, func(t *testing.T) {
 			if _, err := client.Stat(context.Background(), id); !errors.Is(err, provider.ErrInvalid) {
@@ -792,9 +727,6 @@ func TestObjectIDValidation(t *testing.T) {
 func TestForbiddenQuotaReasonMarksNodeFull(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	cases := []struct {
 		reason      string
 		wantHealth  provider.Health
@@ -894,8 +826,6 @@ func TestCancelledContextLeavesHealthUnknown(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	
-	
 	_, err := client.Stat(ctx, "any")
 	if err == nil {
 		t.Fatal("a cancelled context must fail the call")
@@ -927,20 +857,17 @@ func TestUploadHonoursCancellation(t *testing.T) {
 func TestContentRangeForms(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	if got := contentRange(0, 100, 0); got != "bytes 0-99/*" {
 		t.Errorf("unknown total = %q, want %q", got, "bytes 0-99/*")
 	}
-	
-	
+
 	if got := contentRange(0, 100, 250); got != "bytes 0-99/250" {
 		t.Errorf("known total, first chunk = %q, want %q", got, "bytes 0-99/250")
 	}
 	if got := contentRange(100, 50, 150); got != "bytes 100-149/150" {
 		t.Errorf("known total, second chunk = %q, want %q", got, "bytes 100-149/150")
 	}
-	
+
 	if got := contentRange(0, 250, 250); got != "bytes 0-249/250" {
 		t.Errorf("known total, one chunk = %q, want %q", got, "bytes 0-249/250")
 	}
@@ -960,9 +887,6 @@ func TestUploadResumesAfterALostAcknowledgement(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	
-	
-	
 	payload := bytes.Repeat([]byte("a"), resumableChunkSize*2+1234)
 
 	drive.loseSessionResponse(1)
@@ -994,7 +918,6 @@ func TestUploadResumesAfterALostAcknowledgement(t *testing.T) {
 			len(got), len(payload), "differ")
 	}
 
-	
 	drive.mu.Lock()
 	ids := len(drive.files)
 	drive.mu.Unlock()
@@ -1009,8 +932,6 @@ func TestUploadDoesNotDuplicateAnObjectFinalisedBlind(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	
-	
 	payload := bytes.Repeat([]byte("b"), resumableChunkSize+77)
 
 	drive.loseSessionResponse(2)
@@ -1033,8 +954,7 @@ func TestUploadDoesNotDuplicateAnObjectFinalisedBlind(t *testing.T) {
 	if ids != 1 {
 		t.Fatalf("%d objects were stored, want exactly 1", ids)
 	}
-	
-	
+
 	if obj.ID != storedID {
 		t.Errorf("Upload returned %q but the stored object is %q", obj.ID, storedID)
 	}
@@ -1049,13 +969,8 @@ func TestUploadGivesUpWhenTheSessionIsGone(t *testing.T) {
 	drive := newFakeDrive()
 	client := drive.start(t)
 
-	
-	
 	payload := bytes.Repeat([]byte("c"), resumableChunkSize*3)
 
-	
-	
-	
 	drive.expireSession(1)
 
 	_, err := client.Upload(context.Background(), bytes.NewReader(payload),
@@ -1090,15 +1005,11 @@ func TestSessionStartDeclaresTheObjectSize(t *testing.T) {
 	t.Errorf("no session declared the object size; got %v", drive.sessionTotals())
 }
 
-
-
 func (f *fakeDrive) loseSessionResponse(chunk int) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.nextSessionLoseAt = chunk
 }
-
-
 
 func (f *fakeDrive) expireSession(chunk int) {
 	f.mu.Lock()

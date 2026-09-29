@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 package localfs
 
 import (
@@ -28,41 +17,23 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
-
-
-
 const sidecarSuffix = ".meta.json"
-
 
 type object struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	Size        int64  `json:"size"`
-	
-	
-	
+
 	SHA256     string    `json:"sha256"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`
 }
 
-
-
-
-
-
 type Node struct {
 	root string
 
-	
-	
 	quota provider.Quota
 
-	
-	
 	accountID string
 
 	mu       sync.Mutex
@@ -73,21 +44,15 @@ type Node struct {
 
 var _ provider.StorageNode = (*Node)(nil)
 
-
 type Config struct {
-	
 	Root string
-	
-	
-	
+
 	Quota int64
-	
-	
+
 	AccountID string
-	
+
 	Now func() time.Time
 }
-
 
 func New(cfg Config) (*Node, error) {
 	if strings.TrimSpace(cfg.Root) == "" {
@@ -125,11 +90,6 @@ func New(cfg Config) (*Node, error) {
 	}, nil
 }
 
-
-
-
-
-
 func (n *Node) Upload(ctx context.Context, r io.Reader, meta provider.ObjectMetadata) (provider.RemoteObject, error) {
 	if r == nil {
 		return provider.RemoteObject{}, &provider.StatusError{
@@ -138,8 +98,6 @@ func (n *Node) Upload(ctx context.Context, r io.Reader, meta provider.ObjectMeta
 		}
 	}
 
-	
-	
 	name := meta.Name
 	if name == "" {
 		name = fmt.Sprintf("object-%d", n.nowFn().UnixNano())
@@ -153,16 +111,12 @@ func (n *Node) Upload(ctx context.Context, r io.Reader, meta provider.ObjectMeta
 
 	finalPath := n.path(name)
 
-	
-	
-	
 	tmp, err := os.CreateTemp(n.root, ".upload-*"+sidecarSuffix)
 	if err != nil {
 		return provider.RemoteObject{}, n.wrapPathErr("create temp file", err)
 	}
 	tmpPath := tmp.Name()
 
-	
 	defer func() {
 		if tmpPath != "" {
 			_ = os.Remove(tmpPath)
@@ -182,9 +136,7 @@ func (n *Node) Upload(ctx context.Context, r io.Reader, meta provider.ObjectMeta
 	}
 
 	if meta.Size > 0 && written != meta.Size {
-		
-		
-		
+
 		return provider.RemoteObject{}, &provider.StatusError{
 			Health: provider.HealthDegraded,
 			Err: fmt.Errorf("%w: wrote %d bytes, expected %d",
@@ -223,15 +175,8 @@ func (n *Node) Upload(ctx context.Context, r io.Reader, meta provider.ObjectMeta
 	}, nil
 }
 
-
-
-
-
-
-
 func (n *Node) copyWithContext(ctx context.Context, dst io.Writer, src io.Reader) (int64, error) {
-	
-	
+
 	buf := make([]byte, 256<<10)
 
 	var written int64
@@ -247,8 +192,7 @@ func (n *Node) copyWithContext(ctx context.Context, dst io.Writer, src io.Reader
 			if writeErr != nil {
 				return written, n.wrapPathErr("write object", writeErr)
 			}
-			
-			
+
 			if nw != nr {
 				return written, n.wrapPathErr("write object", io.ErrShortWrite)
 			}
@@ -262,7 +206,6 @@ func (n *Node) copyWithContext(ctx context.Context, dst io.Writer, src io.Reader
 		}
 	}
 }
-
 
 func (n *Node) Download(ctx context.Context, id string) (io.ReadCloser, error) {
 	if err := ctx.Err(); err != nil {
@@ -279,10 +222,6 @@ func (n *Node) Download(ctx context.Context, id string) (io.ReadCloser, error) {
 
 	return f, nil
 }
-
-
-
-
 
 func (n *Node) Delete(ctx context.Context, id string) error {
 	if err := ctx.Err(); err != nil {
@@ -302,9 +241,6 @@ func (n *Node) Delete(ctx context.Context, id string) error {
 		return n.wrapPathErr("stat object", err)
 	}
 
-	
-	
-	
 	if err := os.Remove(n.path(id)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return n.wrapPathErr("delete object", err)
 	}
@@ -316,7 +252,6 @@ func (n *Node) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-
 func (n *Node) Stat(ctx context.Context, id string) (provider.RemoteObject, error) {
 	if err := ctx.Err(); err != nil {
 		return provider.RemoteObject{}, err
@@ -327,8 +262,7 @@ func (n *Node) Stat(ctx context.Context, id string) (provider.RemoteObject, erro
 
 	record, err := n.readSidecar(id)
 	if err != nil {
-		
-		
+
 		info, statErr := os.Stat(n.path(id))
 		if statErr != nil {
 			if errors.Is(statErr, os.ErrNotExist) {
@@ -356,20 +290,15 @@ func (n *Node) Stat(ctx context.Context, id string) (provider.RemoteObject, erro
 	}, nil
 }
 
-
 func (n *Node) Quota(context.Context) (provider.Quota, error) {
 	return n.quota, nil
 }
-
 
 func (n *Node) Identity(context.Context) (provider.Identity, error) {
 	return n.identity, nil
 }
 
-
 func (n *Node) Root() string { return n.root }
-
-
 
 func (n *Node) Objects() ([]string, error) {
 	entries, err := os.ReadDir(n.root)
@@ -383,7 +312,7 @@ func (n *Node) Objects() ([]string, error) {
 			continue
 		}
 		name := entry.Name()
-		
+
 		if strings.HasSuffix(name, sidecarSuffix) || strings.HasPrefix(name, ".upload-") {
 			continue
 		}
@@ -402,9 +331,7 @@ func (n *Node) writeSidecar(name string, record object) error {
 	}
 
 	path := n.path(name + sidecarSuffix)
-	
-	
-	
+
 	if err := os.WriteFile(path, encoded, 0o600); err != nil {
 		return n.wrapPathErr("write metadata", err)
 	}
@@ -426,8 +353,6 @@ func (n *Node) readSidecar(name string) (object, error) {
 	return record, nil
 }
 
-
-
 func (n *Node) classifyPathErr(op, id string, err error) error {
 	if errors.Is(err, os.ErrNotExist) {
 		return provider.NotFound(id)
@@ -443,16 +368,8 @@ func (n *Node) wrapPathErr(op string, err error) error {
 		return &provider.StatusError{Health: provider.HealthDegraded, Err: err}
 	}
 
-	
-	
 	return &provider.StatusError{Health: provider.HealthOffline, Err: err}
 }
-
-
-
-
-
-
 
 func validateName(name string) error {
 	switch {
@@ -472,8 +389,7 @@ func validateName(name string) error {
 			Err:    fmt.Errorf("%w: object name %q is not a usable file name", provider.ErrInvalid, name),
 		}
 	case strings.HasPrefix(name, ".upload-"):
-		
-		
+
 		return &provider.StatusError{
 			Health: provider.HealthDegraded,
 			Err:    fmt.Errorf("%w: object name %q is reserved", provider.ErrInvalid, name),

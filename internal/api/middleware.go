@@ -14,23 +14,14 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/logging"
 )
 
-
 type requestIDKey struct{}
 
-
 const RequestIDHeader = "X-Request-ID"
-
 
 func RequestIDFromContext(ctx context.Context) string {
 	id, _ := ctx.Value(requestIDKey{}).(string)
 	return id
 }
-
-
-
-
-
-
 
 func (s *Server) requestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,8 +36,6 @@ func (s *Server) requestID(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
-
 
 func safeRequestID(id string) bool {
 	const maxLen = 64
@@ -63,11 +52,6 @@ func safeRequestID(id string) bool {
 	}
 	return true
 }
-
-
-
-
-
 
 func (s *Server) realIP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -89,18 +73,14 @@ func isLoopback(remoteAddr string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-
-
 func firstForwarded(header string) string {
 	first := header
 	if i := strings.IndexByte(header, ','); i >= 0 {
 		first = header[:i]
 	}
-	
-	
+
 	return strings.TrimSpace(first)
 }
-
 
 type statusRecorder struct {
 	http.ResponseWriter
@@ -117,7 +97,7 @@ func (r *statusRecorder) WriteHeader(status int) {
 
 func (r *statusRecorder) Write(b []byte) (int, error) {
 	if r.status == 0 {
-		
+
 		r.status = http.StatusOK
 	}
 	n, err := r.ResponseWriter.Write(b)
@@ -125,17 +105,11 @@ func (r *statusRecorder) Write(b []byte) (int, error) {
 	return n, err
 }
 
-
-
-
-
 func (s *Server) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rec := &statusRecorder{ResponseWriter: w}
 
-		
-		
 		r = r.WithContext(logging.WithLogger(r.Context(), s.logger))
 
 		next.ServeHTTP(rec, r)
@@ -164,11 +138,6 @@ func (s *Server) logRequest(next http.Handler) http.Handler {
 	})
 }
 
-
-
-
-
-
 func (s *Server) recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -177,9 +146,6 @@ func (s *Server) recoverer(next http.Handler) http.Handler {
 				return
 			}
 
-			
-			
-			
 			if recovered == http.ErrAbortHandler {
 				panic(recovered)
 			}

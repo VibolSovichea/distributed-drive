@@ -9,25 +9,9 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
-
-
-
-
-
-
 var ErrHasData = errors.New("pool: the node still holds chunks")
 
-
 var ErrAlreadyAttached = errors.New("pool: the node is already in this pool")
-
-
-
-
-
-
-
 
 func (m *Manager) AddNode(ctx context.Context, poolID, nodeID string) (metadata.Node, error) {
 	if !id.IsValid(poolID) {
@@ -54,20 +38,12 @@ func (m *Manager) AddNode(ctx context.Context, poolID, nodeID string) (metadata.
 		return node, fmt.Errorf("%w: node %s in pool %s", ErrAlreadyAttached, nodeID, poolID)
 	}
 
-	
-	
 	if err := m.store.AddNodeToPool(ctx, poolID, nodeID, m.now().UTC()); err != nil {
 		return metadata.Node{}, fmt.Errorf("pool: attach node %s to %s: %w", nodeID, poolID, err)
 	}
 
 	return node, nil
 }
-
-
-
-
-
-
 
 func (m *Manager) RemoveNode(ctx context.Context, poolID, nodeID string) error {
 	if !id.IsValid(poolID) {
@@ -98,8 +74,7 @@ func (m *Manager) RemoveNode(ctx context.Context, poolID, nodeID string) error {
 		return fmt.Errorf("pool: check membership of %s in %s: %w", nodeID, poolID, err)
 	}
 	if !attached {
-		
-		
+
 		return nil
 	}
 
@@ -109,7 +84,6 @@ func (m *Manager) RemoveNode(ctx context.Context, poolID, nodeID string) error {
 
 	return nil
 }
-
 
 func (m *Manager) ListNodes(ctx context.Context, poolID string) ([]metadata.Node, error) {
 	if !id.IsValid(poolID) {

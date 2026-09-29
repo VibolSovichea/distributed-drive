@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 package gdrive
 
 import (
@@ -27,88 +19,40 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
-
-
 const (
 	defaultBaseURL   = "https://www.googleapis.com/drive/v3"
 	defaultUploadURL = "https://www.googleapis.com/upload/drive/v3"
 )
 
-
-
-
-
-
-
-
-
 const DriveScope = "https://www.googleapis.com/auth/drive"
-
-
-
-
-
 
 const fileFields = "id,name,size,md5Checksum,createdTime,modifiedTime"
 
-
-
-
-
-
 const resumableChunkSize = 8 << 20
-
-
-
-
-
 
 const statusResumeIncomplete = 308
 
-
-
-
 const defaultTimeout = 10 * time.Minute
-
-
-
-
 
 type Client struct {
 	http    *http.Client
 	account string
 
-	
-	
-	
-	
-	
 	base   string
 	upload string
 }
 
 var _ provider.StorageNode = (*Client)(nil)
 
-
 type Options struct {
-	
 	TokenSource oauth2.TokenSource
 
-	
-	
 	HTTPClient *http.Client
 
-	
-	
 	Account string
 
-	
 	Timeout time.Duration
 }
-
 
 func New(opts Options) (*Client, error) {
 	if opts.TokenSource == nil {
@@ -132,9 +76,7 @@ func New(opts Options) (*Client, error) {
 	}, nil
 }
 
-
 func (c *Client) Account() string { return c.account }
-
 
 type driveFile struct {
 	ID           string `json:"id"`
@@ -151,10 +93,6 @@ func (f driveFile) toRemote() (provider.RemoteObject, error) {
 		return provider.RemoteObject{}, err
 	}
 
-	
-	
-	
-	
 	created, _ := parseTime(f.CreatedTime)
 	modified, _ := parseTime(f.ModifiedTime)
 
@@ -167,9 +105,6 @@ func (f driveFile) toRemote() (provider.RemoteObject, error) {
 		ModifiedAt: modified,
 	}, nil
 }
-
-
-
 
 func parseSize(raw string) (int64, error) {
 	if raw == "" {
@@ -196,12 +131,6 @@ func parseTime(raw string) (time.Time, error) {
 	return parsed.UTC(), nil
 }
 
-
-
-
-
-
-
 func (c *Client) Upload(ctx context.Context, r io.Reader, meta provider.ObjectMetadata) (provider.RemoteObject, error) {
 	if r == nil {
 		return provider.RemoteObject{}, provider.Degradedf(errors.New("gdrive: upload needs a reader"))
@@ -217,13 +146,8 @@ func (c *Client) Upload(ctx context.Context, r io.Reader, meta provider.ObjectMe
 		return provider.RemoteObject{}, err
 	}
 
-	
-	
-	
-	
 	return file.toRemote()
 }
-
 
 type uploadRequest struct {
 	Name        string `json:"name,omitempty"`
@@ -231,19 +155,13 @@ type uploadRequest struct {
 	MimeType    string `json:"mimeType,omitempty"`
 }
 
-
-
-
-
 func contentType(meta provider.ObjectMetadata) string {
 	if meta.ContentType != "" {
 		return meta.ContentType
 	}
-	
-	
+
 	return "application/octet-stream"
 }
-
 
 func (c *Client) startUploadSession(ctx context.Context, meta provider.ObjectMetadata) (string, error) {
 	body, err := json.Marshal(uploadRequest{
@@ -265,17 +183,10 @@ func (c *Client) startUploadSession(ctx context.Context, meta provider.ObjectMet
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Set("X-Upload-Content-Type", contentType(meta))
 
-	
-	
-	
-	
-	
 	if meta.Size > 0 {
 		req.Header.Set("X-Upload-Content-Length", strconv.FormatInt(meta.Size, 10))
 	}
 
-	
-	
 	resp, err := c.send(req)
 	if err != nil {
 		return "", err
@@ -292,10 +203,6 @@ func (c *Client) startUploadSession(ctx context.Context, meta provider.ObjectMet
 			errors.New("gdrive: the upload session response carried no Location header"))
 	}
 
-	
-	
-	
-	
 	sessionURL, err := req.URL.Parse(location)
 	if err != nil {
 		return "", provider.Degradedf(
@@ -304,17 +211,6 @@ func (c *Client) startUploadSession(ctx context.Context, meta provider.ObjectMet
 
 	return sessionURL.String(), nil
 }
-
-
-
-
-
-
-
-
-
-
-
 
 func (c *Client) pumpUpload(ctx context.Context, sessionURL string, r io.Reader, total int64) (driveFile, error) {
 	buf := make([]byte, resumableChunkSize)
@@ -333,8 +229,7 @@ func (c *Client) pumpUpload(ctx context.Context, sessionURL string, r io.Reader,
 			if !errors.Is(readErr, io.EOF) {
 				return driveFile{}, provider.Degradedf(fmt.Errorf("gdrive: read the upload source: %w", readErr))
 			}
-			
-			
+
 			if known {
 				return driveFile{}, provider.Degradedf(fmt.Errorf(
 					"%w: the upload source ended after %d of %d bytes",
@@ -355,28 +250,21 @@ func (c *Client) pumpUpload(ctx context.Context, sessionURL string, r io.Reader,
 		}
 
 		if readErr != nil {
-			
+
 			if !errors.Is(readErr, io.EOF) {
 				return driveFile{}, provider.Degradedf(fmt.Errorf("gdrive: read the upload source: %w", readErr))
 			}
 
-			
-			
-			
-			
 			if known {
 				return driveFile{}, provider.Degradedf(fmt.Errorf(
 					"%w: the upload source ended after %d of %d bytes",
 					provider.ErrInvalid, offset, total))
 			}
 
-			
-			
 			return c.finalizeSession(ctx, sessionURL, offset)
 		}
 	}
 }
-
 
 func fill(buf []byte, r io.Reader) (int, error) {
 	total := 0
@@ -390,54 +278,28 @@ func fill(buf []byte, r io.Reader) (int, error) {
 	return total, nil
 }
 
-
-
-
 const maxResumeAttempts = 2
-
-
 
 type uploadOutcome bool
 
 const (
-	
 	uploadPending uploadOutcome = false
-	
+
 	uploadComplete uploadOutcome = true
 )
 
-
-
-
 var errSessionGone = errors.New("gdrive: the upload session is gone")
-
-
-
 
 type transportFailure struct{ err error }
 
 func (e *transportFailure) Error() string { return e.err.Error() }
 func (e *transportFailure) Unwrap() error { return e.err }
 
-
 type sessionState struct {
-	
-	
-	
 	file driveFile
-	
+
 	offset int64
 }
-
-
-
-
-
-
-
-
-
-
 
 func (c *Client) putChunkResumable(ctx context.Context, sessionURL string, chunk []byte, offset, total int64) (driveFile, uploadOutcome, error) {
 	start := offset
@@ -464,21 +326,15 @@ func (c *Client) putChunkResumable(ctx context.Context, sessionURL string, chunk
 		state, qerr := c.queryOffset(ctx, sessionURL, total)
 		if qerr != nil {
 			if errors.Is(qerr, errSessionGone) {
-				
-				
-				
-				
+
 				return driveFile{}, uploadPending, provider.Degradedf(fmt.Errorf(
 					"gdrive: the upload session expired after %d bytes; retry the upload",
 					start+sent))
 			}
-			
-			
+
 			return driveFile{}, uploadPending, err
 		}
 
-		
-		
 		if state.file.ID != "" {
 			return state.file, uploadComplete, nil
 		}
@@ -496,23 +352,13 @@ func (c *Client) putChunkResumable(ctx context.Context, sessionURL string, chunk
 		}
 
 		if got == int64(len(chunk)) {
-			
-			
-			
-			
+
 			return driveFile{}, uploadPending, nil
 		}
 
-		
-		
 		sent = got
 	}
 }
-
-
-
-
-
 
 func (c *Client) queryOffset(ctx context.Context, sessionURL string, total int64) (sessionState, error) {
 	if total <= 0 {
@@ -560,8 +406,6 @@ func (c *Client) queryOffset(ctx context.Context, sessionURL string, total int64
 	}
 }
 
-
-
 func (c *Client) putChunk(ctx context.Context, sessionURL string, chunk []byte, offset, total int64) (file driveFile, outcome uploadOutcome, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, sessionURL, bytes.NewReader(chunk))
 	if err != nil {
@@ -570,15 +414,12 @@ func (c *Client) putChunk(ctx context.Context, sessionURL string, chunk []byte, 
 
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.ContentLength = int64(len(chunk))
-	
-	
+
 	req.Header.Set("Content-Range", contentRange(offset, int64(len(chunk)), total))
 
 	resp, err := c.send(req)
 	if err != nil {
-		
-		
-		
+
 		return driveFile{}, uploadPending, &transportFailure{err: err}
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -597,14 +438,11 @@ func (c *Client) putChunk(ctx context.Context, sessionURL string, chunk []byte, 
 		return created, uploadComplete, nil
 
 	case statusResumeIncomplete:
-		
-		
-		
+
 		return driveFile{}, uploadPending, checkOffset(resp, offset+int64(len(chunk)))
 
 	case http.StatusRequestedRangeNotSatisfiable, http.StatusNotFound:
-		
-		
+
 		return driveFile{}, uploadPending, provider.Degradedf(fmt.Errorf(
 			"gdrive: the upload session expired after %d bytes; retry the upload", offset))
 
@@ -613,12 +451,10 @@ func (c *Client) putChunk(ctx context.Context, sessionURL string, chunk []byte, 
 	}
 }
 
-
 func checkOffset(resp *http.Response, want int64) error {
 	raw := resp.Header.Get("Range")
 	if raw == "" {
-		
-		
+
 		return nil
 	}
 
@@ -634,11 +470,6 @@ func checkOffset(resp *http.Response, want int64) error {
 
 	return nil
 }
-
-
-
-
-
 
 func acknowledgedOffset(resp *http.Response) (int64, error) {
 	raw := resp.Header.Get("Range")
@@ -659,7 +490,6 @@ func acknowledgedOffset(resp *http.Response) (int64, error) {
 
 	return got + 1, nil
 }
-
 
 func (c *Client) finalizeSession(ctx context.Context, sessionURL string, offset int64) (driveFile, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, sessionURL, bytes.NewReader(nil))
@@ -691,21 +521,15 @@ func (c *Client) finalizeSession(ctx context.Context, sessionURL string, offset 
 	return created, nil
 }
 
-
 func contentRange(offset, length, total int64) string {
 	last := offset + length - 1
 
-	
-	
-	
-	
 	if total > 0 {
 		return fmt.Sprintf("bytes %d-%d/%d", offset, last, total)
 	}
-	
+
 	return fmt.Sprintf("bytes %d-%d/*", offset, last)
 }
-
 
 func (c *Client) Download(ctx context.Context, id string) (io.ReadCloser, error) {
 	if err := validateFileID(id); err != nil {
@@ -733,12 +557,8 @@ func (c *Client) Download(ctx context.Context, id string) (io.ReadCloser, error)
 		return nil, c.apiError("download the object", resp)
 	}
 
-	
-	
-	
 	return resp.Body, nil
 }
-
 
 func (c *Client) Delete(ctx context.Context, id string) error {
 	if err := validateFileID(id); err != nil {
@@ -767,7 +587,6 @@ func (c *Client) Delete(ctx context.Context, id string) error {
 		return c.apiError("delete the object", resp)
 	}
 }
-
 
 func (c *Client) Stat(ctx context.Context, id string) (provider.RemoteObject, error) {
 	if err := validateFileID(id); err != nil {
@@ -803,7 +622,6 @@ func (c *Client) Stat(ctx context.Context, id string) (provider.RemoteObject, er
 	return file.toRemote()
 }
 
-
 func (c *Client) Quota(ctx context.Context) (provider.Quota, error) {
 	var body struct {
 		StorageQuota struct {
@@ -828,7 +646,6 @@ func (c *Client) Quota(ctx context.Context) (provider.Quota, error) {
 	return provider.Quota{Total: limit, Used: used}, nil
 }
 
-
 func (c *Client) Identity(ctx context.Context) (provider.Identity, error) {
 	var body struct {
 		User struct {
@@ -842,9 +659,6 @@ func (c *Client) Identity(ctx context.Context) (provider.Identity, error) {
 		return provider.Identity{}, err
 	}
 
-	
-	
-	
 	return provider.Identity{
 		AccountID:   body.User.PermissionID,
 		Email:       body.User.EmailAddress,
@@ -875,12 +689,6 @@ func (c *Client) getJSON(ctx context.Context, endpoint string, dst any) error {
 	return nil
 }
 
-
-
-
-
-
-
 func (c *Client) send(req *http.Request) (*http.Response, error) {
 	resp, err := c.http.Do(req)
 	if err != nil {
@@ -889,17 +697,12 @@ func (c *Client) send(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-
 func classifyTransportError(req *http.Request, err error) error {
-	
-	
-	
+
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
 
-	
-	
 	if isTLSError(err) {
 		return provider.Degradedf(fmt.Errorf("gdrive: TLS failure talking to Drive: %w", err))
 	}
@@ -917,15 +720,10 @@ func isTLSError(err error) bool {
 	if errors.As(err, &recordErr) {
 		return true
 	}
-	
-	
+
 	return strings.Contains(err.Error(), "x509:") ||
 		strings.Contains(err.Error(), "tls:")
 }
-
-
-
-
 
 func (c *Client) apiError(op string, resp *http.Response) error {
 	status := resp.StatusCode
@@ -941,10 +739,7 @@ func (c *Client) apiError(op string, resp *http.Response) error {
 		return provider.Authf(err)
 
 	case status == http.StatusForbidden:
-		
-		
-		
-		
+
 		if isQuotaReason(reason) {
 			return provider.QuotaExceededf(err)
 		}
@@ -957,9 +752,7 @@ func (c *Client) apiError(op string, resp *http.Response) error {
 		return provider.Degradedf(fmt.Errorf("%w: %s", provider.ErrInvalid, err))
 
 	case status == http.StatusTooManyRequests:
-		
-		
-		
+
 		return provider.Degradedf(fmt.Errorf("%w: %s", provider.ErrUnavailable, err))
 
 	case retryableStatus(status):
@@ -969,7 +762,6 @@ func (c *Client) apiError(op string, resp *http.Response) error {
 		return provider.Degradedf(err)
 	}
 }
-
 
 func apiErrorReason(resp *http.Response) string {
 	if resp.Body == nil {
@@ -984,8 +776,6 @@ func apiErrorReason(resp *http.Response) string {
 		} `json:"error"`
 	}
 
-	
-	
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		return ""
 	}
@@ -1017,10 +807,6 @@ func isQuotaReason(reason string) bool {
 		return false
 	}
 }
-
-
-
-
 
 func validateFileID(id string) error {
 	if strings.TrimSpace(id) == "" {

@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-
-
 type seed struct {
 	poolID string
 	fileID string
@@ -57,13 +55,6 @@ func seedFileAndNodes(t *testing.T, db *sql.DB) seed {
 	}
 }
 
-
-
-
-
-
-
-
 func applyOne(t *testing.T, db *sql.DB, version int64) {
 	t.Helper()
 
@@ -83,12 +74,6 @@ func applyOne(t *testing.T, db *sql.DB, version int64) {
 	t.Fatalf("no migration with version %d", version)
 }
 
-
-
-
-
-
-
 func TestMultiStripeMigrationRebuildsChunks(t *testing.T) {
 	dir := t.TempDir()
 	dsn := "file:" + dir + "/rebuild.db?_pragma=foreign_keys(1)"
@@ -100,12 +85,9 @@ func TestMultiStripeMigrationRebuildsChunks(t *testing.T) {
 	defer func() { _ = db.Close() }()
 	ctx := t.Context()
 
-	
 	applyOne(t, db, 1)
 	s := seedFileAndNodes(t, db)
 
-	
-	
 	rows := []struct {
 		id, node string
 		index    int
@@ -129,9 +111,6 @@ func TestMultiStripeMigrationRebuildsChunks(t *testing.T) {
 
 	applyOne(t, db, 2)
 
-	
-	
-	
 	got, err := db.QueryContext(ctx,
 		`SELECT id, stripe_index, chunk_index, node_id, remote_file_id, size, hash, chunk_type
 		 FROM chunks ORDER BY chunk_index`)
@@ -182,9 +161,7 @@ func TestMultiStripeMigrationRebuildsChunks(t *testing.T) {
 			t.Errorf("%s: index=%d node=%q kind=%q, want %d %q %q",
 				id, index, node, kind, want.index, want.node, want.kind)
 		}
-		
-		
-		
+
 		if size != want.size {
 			t.Errorf("%s: size = %d, want %d", id, size, want.size)
 		}
@@ -202,9 +179,6 @@ func TestMultiStripeMigrationRebuildsChunks(t *testing.T) {
 		t.Errorf("%d rows survived the rebuild, want %d", seen, len(rows))
 	}
 }
-
-
-
 
 func TestChunksAllowRepeatedIndexAcrossStripes(t *testing.T) {
 	db := testDB(t)
@@ -235,10 +209,6 @@ func TestChunksAllowRepeatedIndexAcrossStripes(t *testing.T) {
 	}
 }
 
-
-
-
-
 func TestChunksStillForbidADuplicateShard(t *testing.T) {
 	db := testDB(t)
 	ctx := t.Context()
@@ -265,9 +235,6 @@ func TestChunksStillForbidADuplicateShard(t *testing.T) {
 	}
 }
 
-
-
-
 func TestRebuildPreservedTheForeignKeys(t *testing.T) {
 	db := testDB(t)
 	ctx := t.Context()
@@ -285,7 +252,6 @@ func TestRebuildPreservedTheForeignKeys(t *testing.T) {
 		t.Fatalf("insert: %v", err)
 	}
 
-	
 	if _, err := db.ExecContext(ctx,
 		`INSERT INTO chunks (id, file_id, stripe_index, chunk_index, node_id,
 			remote_file_id, size, hash, chunk_type, created_at)
@@ -294,7 +260,6 @@ func TestRebuildPreservedTheForeignKeys(t *testing.T) {
 		t.Error("the reference to files must still be enforced")
 	}
 
-	
 	if _, err := db.ExecContext(ctx, `DELETE FROM files WHERE id = ?`, s.fileID); err != nil {
 		t.Fatalf("delete file: %v", err)
 	}
@@ -307,8 +272,6 @@ func TestRebuildPreservedTheForeignKeys(t *testing.T) {
 		t.Errorf("%d chunks survived the file deletion, want 0", left)
 	}
 }
-
-
 
 func TestRebuildPreservedTheCheckConstraints(t *testing.T) {
 	db := testDB(t)

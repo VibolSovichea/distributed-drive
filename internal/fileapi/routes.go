@@ -1,5 +1,3 @@
-
-
 package fileapi
 
 import (
@@ -18,13 +16,11 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-
 type Config struct {
 	Service Service
 	Logger  *slog.Logger
 	Now     func() time.Time
 }
-
 
 func RegisterRoutes(r chi.Router, cfg Config) {
 	if cfg.Service == nil {
@@ -117,15 +113,10 @@ func (h *handlers) writeServiceError(w http.ResponseWriter, r *http.Request, err
 	}
 }
 
-
 type uploadRequest struct {
 	Name string `json:"name"`
 	Size int64  `json:"size,omitempty"`
 }
-
-
-
-
 
 func (h *handlers) handleUpload(w http.ResponseWriter, r *http.Request) {
 	poolID := chi.URLParam(r, "poolID")
@@ -134,7 +125,6 @@ func (h *handlers) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		name = r.Header.Get("X-File-Name")
@@ -143,7 +133,6 @@ func (h *handlers) handleUpload(w http.ResponseWriter, r *http.Request) {
 		name = "upload-" + h.now().Format("20060102150405")
 	}
 
-	
 	size := int64(0)
 	if sz := r.URL.Query().Get("size"); sz != "" {
 		if v, err := strconv.ParseInt(sz, 10, 64); err == nil {
@@ -171,8 +160,6 @@ func (h *handlers) handleUpload(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
-
 func (h *handlers) handleListFiles(w http.ResponseWriter, r *http.Request) {
 	files, err := h.svc.ListFiles(r.Context(), chi.URLParam(r, "poolID"))
 	if err != nil {
@@ -199,8 +186,6 @@ func (h *handlers) handleListFiles(w http.ResponseWriter, r *http.Request) {
 	h.writeJSON(w, r, http.StatusOK, out)
 }
 
-
-
 func (h *handlers) handleGetFile(w http.ResponseWriter, r *http.Request) {
 	file, err := h.svc.GetFile(r.Context(), chi.URLParam(r, "fileID"))
 	if err != nil {
@@ -222,12 +207,9 @@ func (h *handlers) handleGetFile(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
-
 func (h *handlers) handleDownload(w http.ResponseWriter, r *http.Request) {
 	fileID := chi.URLParam(r, "fileID")
 
-	
 	file, err := h.svc.GetFile(r.Context(), fileID)
 	if err != nil {
 		h.writeServiceError(w, r, err)
@@ -251,8 +233,6 @@ func (h *handlers) handleDownload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
-
 func (h *handlers) handleRepairFile(w http.ResponseWriter, r *http.Request) {
 	result, err := h.svc.RepairFile(r.Context(), chi.URLParam(r, "fileID"))
 	if err != nil {
@@ -266,8 +246,6 @@ func (h *handlers) handleRepairFile(w http.ResponseWriter, r *http.Request) {
 		"healthy":    result.Healthy,
 	})
 }
-
-
 
 func (h *handlers) handleScrubFile(w http.ResponseWriter, r *http.Request) {
 	result, err := h.svc.ScrubFile(r.Context(), chi.URLParam(r, "fileID"))
@@ -284,8 +262,6 @@ func (h *handlers) handleScrubFile(w http.ResponseWriter, r *http.Request) {
 		"healthy":  result.Healthy,
 	})
 }
-
-
 
 func (h *handlers) handleRepairPool(w http.ResponseWriter, r *http.Request) {
 	results, err := h.svc.RepairPool(r.Context(), chi.URLParam(r, "poolID"))
@@ -304,8 +280,6 @@ func (h *handlers) handleRepairPool(w http.ResponseWriter, r *http.Request) {
 	}
 	h.writeJSON(w, r, http.StatusOK, out)
 }
-
-
 
 func (h *handlers) handleScrubPool(w http.ResponseWriter, r *http.Request) {
 	results, err := h.svc.ScrubPool(r.Context(), chi.URLParam(r, "poolID"))
@@ -326,9 +300,6 @@ func (h *handlers) handleScrubPool(w http.ResponseWriter, r *http.Request) {
 	}
 	h.writeJSON(w, r, http.StatusOK, out)
 }
-
-
-
 
 func (h *handlers) handleSweepAbandoned(w http.ResponseWriter, r *http.Request) {
 	type sweepRequest struct {
@@ -353,8 +324,6 @@ func (h *handlers) handleSweepAbandoned(w http.ResponseWriter, r *http.Request) 
 		"swept": count,
 	})
 }
-
-
 
 func (h *handlers) handleDeleteFile(w http.ResponseWriter, r *http.Request) {
 	h.writeError(w, r, http.StatusNotImplemented, "not_implemented", "file deletion not yet implemented")

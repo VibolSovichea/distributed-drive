@@ -34,9 +34,6 @@ func newNode(t *testing.T) *Node {
 	return node
 }
 
-
-
-
 func payload(size int) []byte {
 	data := make([]byte, size)
 	for i := range data {
@@ -156,16 +153,13 @@ func TestDeleteRemovesObjectAndMetadata(t *testing.T) {
 		t.Errorf("Stat() after delete error = %v, want provider.ErrNotFound", err)
 	}
 
-	
-	
 	if _, err := os.Stat(node.path("shard-0" + sidecarSuffix)); !errors.Is(err, os.ErrNotExist) {
 		t.Error("the metadata file survived the delete")
 	}
 }
 
 func TestDeleteOfAMissingObjectIsNotFound(t *testing.T) {
-	
-	
+
 	node := newNode(t)
 
 	err := node.Delete(t.Context(), "absent")
@@ -175,8 +169,7 @@ func TestDeleteOfAMissingObjectIsNotFound(t *testing.T) {
 }
 
 func TestUploadRejectsAShortSource(t *testing.T) {
-	
-	
+
 	node := newNode(t)
 
 	_, err := node.Upload(t.Context(), bytes.NewReader(payload(10)), provider.ObjectMetadata{
@@ -190,8 +183,6 @@ func TestUploadRejectsAShortSource(t *testing.T) {
 		t.Errorf("error = %v, want it to wrap provider.ErrInvalid", err)
 	}
 
-	
-	
 	names, listErr := node.Objects()
 	if listErr != nil {
 		t.Fatalf("Objects() error = %v, want nil", listErr)
@@ -202,8 +193,7 @@ func TestUploadRejectsAShortSource(t *testing.T) {
 }
 
 func TestUploadAcceptsAnUnknownSize(t *testing.T) {
-	
-	
+
 	node := newNode(t)
 	data := payload(300)
 
@@ -230,8 +220,6 @@ func TestUploadGeneratesANameWhenNoneIsGiven(t *testing.T) {
 		t.Error("ID is empty, want a generated name")
 	}
 }
-
-
 
 type erroringReader struct {
 	data    []byte
@@ -264,8 +252,6 @@ func TestAFailedUploadLeavesNothingBehind(t *testing.T) {
 		t.Fatal("Upload() = nil, want the read error")
 	}
 
-	
-	
 	names, listErr := node.Objects()
 	if listErr != nil {
 		t.Fatalf("Objects() error = %v, want nil", listErr)
@@ -321,8 +307,7 @@ func TestOperationsHonourAnAlreadyCancelledContext(t *testing.T) {
 }
 
 func TestNamesThatCouldEscapeTheRootAreRejected(t *testing.T) {
-	
-	
+
 	tests := []struct {
 		name   string
 		object string
@@ -358,8 +343,7 @@ func TestNamesThatCouldEscapeTheRootAreRejected(t *testing.T) {
 }
 
 func TestAFileOutsideTheRootIsUntouched(t *testing.T) {
-	
-	
+
 	parent := t.TempDir()
 	outside := filepath.Join(parent, "secret")
 	if err := os.WriteFile(outside, []byte("do not touch"), 0o600); err != nil {
@@ -406,9 +390,7 @@ func TestQuotaAndIdentity(t *testing.T) {
 }
 
 func TestAnUnknownQuotaIsReportedAsUnknown(t *testing.T) {
-	
-	
-	
+
 	node, err := New(Config{Root: t.TempDir()})
 	if err != nil {
 		t.Fatalf("New() error = %v, want nil", err)
@@ -453,8 +435,6 @@ func TestObjectsExcludesMetadataAndInFlightUploads(t *testing.T) {
 	mustUpload(t, node, "shard-0", payload(16))
 	mustUpload(t, node, "shard-1", payload(16))
 
-	
-	
 	if err := os.WriteFile(node.path(".upload-pending"+sidecarSuffix), []byte("{}"), 0o600); err != nil {
 		t.Fatalf("planting a temp file: %v", err)
 	}
@@ -476,10 +456,7 @@ func TestObjectsExcludesMetadataAndInFlightUploads(t *testing.T) {
 }
 
 func TestUploadDoesNotBufferTheWholeSource(t *testing.T) {
-	
-	
-	
-	
+
 	node := newNode(t)
 
 	const chunk = 256 << 10
@@ -504,9 +481,6 @@ func TestUploadDoesNotBufferTheWholeSource(t *testing.T) {
 		t.Fatalf("Upload() error = %v, want nil", err)
 	}
 
-	
-	
-	
 	if peak > chunk {
 		t.Errorf("peak in-flight bytes = %d, want at most the %d-byte buffer", peak, chunk)
 	}
@@ -523,7 +497,7 @@ func (c *countingReader) Read(p []byte) (int, error) {
 	if n > 0 && c.onRead != nil {
 		c.onRead(n)
 		if c.onRelease != nil {
-			
+
 			c.onRelease(n)
 		}
 	}
@@ -531,9 +505,7 @@ func (c *countingReader) Read(p []byte) (int, error) {
 }
 
 func TestProviderInterfaceIsSatisfied(t *testing.T) {
-	
-	
-	
+
 	var node provider.StorageNode = newNode(t)
 	if node == nil {
 		t.Fatal("the node does not satisfy provider.StorageNode")

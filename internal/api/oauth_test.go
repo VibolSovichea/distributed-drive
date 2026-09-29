@@ -15,7 +15,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/authflow"
 )
 
-
 type fakeOAuth struct {
 	startErr     error
 	completeErr  error
@@ -39,7 +38,6 @@ func (f *fakeOAuth) Complete(_ context.Context, code, state string) error {
 	f.completedSt = state
 	return f.completeErr
 }
-
 
 func newOAuthServer(t *testing.T, oauth OAuthService) http.Handler {
 	t.Helper()
@@ -97,7 +95,7 @@ func TestAuthorizeStartsAFlow(t *testing.T) {
 	if raw == "" {
 		t.Fatal("the response carried no authorizationUrl")
 	}
-	
+
 	parsed, err := url.Parse(raw)
 	if err != nil {
 		t.Fatalf("the URL does not parse: %v", err)
@@ -132,8 +130,6 @@ func TestOAuthCallbackCompletesTheFlow(t *testing.T) {
 func TestOAuthCallbackRejectsMissingParameters(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	for _, path := range []string{
 		"/api/oauth/callback",
 		"/api/oauth/callback?code=the-code",
@@ -158,7 +154,6 @@ func TestOAuthCallbackReportsAProviderRefusal(t *testing.T) {
 	oauth := &fakeOAuth{}
 	h := newOAuthServer(t, oauth)
 
-	
 	rec := doGet(t, h, "/api/oauth/callback?error=access_denied&state=the-state")
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400 (body %s)", rec.Code, rec.Body.String())
@@ -178,8 +173,6 @@ func TestOAuthCallbackReportsAProviderRefusal(t *testing.T) {
 func TestOAuthCallbackMapsFlowErrorsToStatus(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	for _, tc := range []struct {
 		name string
 		err  error
@@ -212,8 +205,6 @@ func TestOAuthCallbackHidesAnUnexpectedFailure(t *testing.T) {
 		t.Fatalf("status = %d, want a server error", rec.Code)
 	}
 
-	
-	
 	if body := rec.Body.String(); strings.Contains(body, "disk is full") {
 		t.Errorf("the internal error leaked to the client: %s", body)
 	}
@@ -224,8 +215,6 @@ func TestProviderErrorIsSanitised(t *testing.T) {
 
 	h := newOAuthServer(t, &fakeOAuth{})
 
-	
-	
 	rec := doGet(t, h, "/api/oauth/callback?error="+url.QueryEscape("a b <script>/etc/passwd"))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", rec.Code)
@@ -248,8 +237,6 @@ func TestOAuthRoutesAreAbsentWithoutAService(t *testing.T) {
 	}
 	h := srv.Handler()
 
-	
-	
 	for _, path := range []string{
 		"/api/oauth/callback?code=c&state=s",
 		"/api/nodes/01HQ000000000000000000001/authorize",

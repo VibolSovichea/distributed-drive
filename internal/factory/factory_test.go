@@ -29,7 +29,6 @@ func googleNode() metadata.Node {
 	}
 }
 
-
 func newFactory(t *testing.T, mutate func(*Options)) *Factory {
 	t.Helper()
 
@@ -57,9 +56,6 @@ func TestOpenGoogleWithoutACredentialIsUnauthorised(t *testing.T) {
 
 	f := newFactory(t, nil)
 
-	
-	
-	
 	_, err := f.Open(context.Background(), googleNode())
 	if !errors.Is(err, node.ErrUnauthorized) {
 		t.Fatalf("error = %v, want ErrUnauthorized", err)
@@ -101,8 +97,6 @@ func TestOpenGoogleRefusesWithoutAnEncryptionKey(t *testing.T) {
 
 	f := newFactory(t, func(o *Options) { o.TokenKey = nil })
 
-	
-	
 	_, err := f.Open(context.Background(), googleNode())
 	if !errors.Is(err, node.ErrNoClient) {
 		t.Errorf("error = %v, want ErrNoClient", err)
@@ -132,7 +126,7 @@ func TestOpenGoogleReportsACorruptTokenAsAConfigurationFault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tokenStore: %v", err)
 	}
-	
+
 	if err := os.MkdirAll(filepath.Dir(store.(interface{ Path() string }).Path()), 0o700); err != nil {
 		t.Fatalf("create the token directory: %v", err)
 	}
@@ -141,7 +135,6 @@ func TestOpenGoogleReportsACorruptTokenAsAConfigurationFault(t *testing.T) {
 		t.Fatalf("write the bad token: %v", err)
 	}
 
-	
 	_, err = f.Open(context.Background(), googleNode())
 	if !errors.Is(err, node.ErrNoClient) {
 		t.Errorf("error = %v, want ErrNoClient", err)
@@ -169,8 +162,6 @@ func TestEachNodeGetsItsOwnTokenFile(t *testing.T) {
 	firstPath := first.(interface{ Path() string }).Path()
 	secondPath := second.(interface{ Path() string }).Path()
 
-	
-	
 	if firstPath == secondPath {
 		t.Errorf("both nodes share the token file %s", firstPath)
 	}
@@ -219,14 +210,11 @@ func TestOpenLocalFSCreatesTheNodeDirectory(t *testing.T) {
 		t.Fatalf("Open: %v", err)
 	}
 
-	
-	
 	want := filepath.Join(f.opts.LocalRoot, nodeID)
 	if info, err := os.Stat(want); err != nil || !info.IsDir() {
 		t.Errorf("the node directory %s was not created: %v", want, err)
 	}
 
-	
 	if _, err := client.Upload(context.Background(),
 		strings.NewReader("data"), provider.ObjectMetadata{Name: "shard", Size: 4}); err != nil {
 		t.Errorf("Upload through the local node: %v", err)
@@ -262,16 +250,12 @@ func TestOpenRejectsAnUnknownProvider(t *testing.T) {
 func TestNodeIDMustBeAUsablePathSegment(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	for _, id := range []string{"", ".", "..", "a/b", `a\b`, "..\\.."} {
 		if err := validateIDSegment(id); err == nil {
 			t.Errorf("validateIDSegment(%q) accepted it", id)
 		}
 	}
 
-	
 	if err := validateIDSegment(nodeID); err != nil {
 		t.Errorf("validateIDSegment(%q) = %v, want it accepted", nodeID, err)
 	}
@@ -314,8 +298,6 @@ func TestStateIsSignedAndCarriesTheNode(t *testing.T) {
 		t.Fatalf("NewState: %v", err)
 	}
 
-	
-	
 	got, err := f.nodeIDFromState(state)
 	if err != nil {
 		t.Fatalf("nodeIDFromState: %v", err)
@@ -335,9 +317,6 @@ func TestStateCannotBeEditedToNameAnotherNode(t *testing.T) {
 		t.Fatalf("NewState: %v", err)
 	}
 
-	
-	
-	
 	raw, err := base64.RawURLEncoding.DecodeString(state)
 	if err != nil {
 		t.Fatalf("decode the state: %v", err)
@@ -364,9 +343,6 @@ func TestStateFromAnotherKeyDoesNotVerify(t *testing.T) {
 		t.Fatalf("NewState: %v", err)
 	}
 
-	
-	
-	
 	if _, err := other.nodeIDFromState(state); err == nil {
 		t.Error("a state signed with another key must not verify")
 	}
@@ -380,9 +356,6 @@ func TestExchangeRejectsAnUnverifiableStateBeforeAnyNetworkCall(t *testing.T) {
 		o.TokenKey = gdrive.KeyFromSecret("a completely different key")
 	})
 
-	
-	
-	
 	stolen, err := attacker.NewState("01HQ000000000000000000009")
 	if err != nil {
 		t.Fatalf("NewState: %v", err)
@@ -394,8 +367,6 @@ func TestExchangeRejectsAnUnverifiableStateBeforeAnyNetworkCall(t *testing.T) {
 		}
 	}
 
-	
-	
 	entries, err := os.ReadDir(f.opts.TokenDir)
 	if err == nil {
 		for _, entry := range entries {

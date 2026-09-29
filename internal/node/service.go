@@ -1,12 +1,3 @@
-
-
-
-
-
-
-
-
-
 package node
 
 import (
@@ -21,33 +12,13 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
-
-
 var ErrNoClient = errors.New("node: no client for this node")
-
-
-
-
-
-
 
 var ErrUnauthorized = errors.New("node: the account is not authorised")
 
-
-
-
-
-
 type Factory interface {
-	
-	
-	
 	Open(ctx context.Context, n metadata.Node) (provider.StorageNode, error)
 }
-
 
 type Store interface {
 	CreateNode(ctx context.Context, node metadata.Node) error
@@ -57,90 +28,52 @@ type Store interface {
 	DeleteNode(ctx context.Context, id string) error
 }
 
-
 type Service interface {
-	
-	
-	
-	
-	
-	
-	
 	Register(ctx context.Context, input RegisterInput) (metadata.Node, error)
 
-	
 	Get(ctx context.Context, nodeID string) (metadata.Node, error)
 
-	
 	List(ctx context.Context) ([]metadata.Node, error)
 
-	
-	
 	Delete(ctx context.Context, nodeID string) error
 
-	
 	Client(ctx context.Context, nodeID string) (provider.StorageNode, error)
 
-	
-	
-	
 	Check(ctx context.Context, nodeID string) (metadata.Node, error)
 
-	
-	
-	
 	CheckAll(ctx context.Context) ([]metadata.Node, error)
 
-	
-	
 	Forget(nodeID string)
 }
 
 var _ Service = (*Registry)(nil)
 
-
 type Registry struct {
 	store   Store
 	factory Factory
 
-	
 	now func() time.Time
 
-	
-	
 	checkTimeout time.Duration
 
-	
-	
-	
 	checkConcurrency int
 
-	
-	
-	
 	mu      sync.Mutex
 	entries map[string]*entry
 }
 
 type entry struct {
-	
-	
-	
-	
 	mu     sync.Mutex
 	client provider.StorageNode
 }
 
-
 type Options struct {
-	
 	CheckTimeout time.Duration
-	
+
 	CheckConcurrency int
-	
+
 	Now func() time.Time
 }
-
 
 func New(store Store, factory Factory, opts Options) *Registry {
 	if opts.CheckTimeout <= 0 {
@@ -163,17 +96,12 @@ func New(store Store, factory Factory, opts Options) *Registry {
 	}
 }
 
-
-
-
 type RegisterInput struct {
 	Name     string
 	Provider metadata.Provider
-	
-	
+
 	Root string
 }
-
 
 func (r *Registry) Register(ctx context.Context, input RegisterInput) (metadata.Node, error) {
 	now := r.now().UTC()
@@ -187,45 +115,33 @@ func (r *Registry) Register(ctx context.Context, input RegisterInput) (metadata.
 		UpdatedAt: now,
 	}
 
-	
-	
-	
 	if err := record.Validate(); err != nil {
 		return metadata.Node{}, err
 	}
 
-	
-	
-	
 	if err := r.store.CreateNode(ctx, record); err != nil {
 		return metadata.Node{}, err
 	}
 
-	
 	return r.Check(ctx, record.ID)
 }
-
 
 func (r *Registry) Get(ctx context.Context, nodeID string) (metadata.Node, error) {
 	return r.store.GetNode(ctx, nodeID)
 }
 
-
 func (r *Registry) List(ctx context.Context) ([]metadata.Node, error) {
 	return r.store.ListNodes(ctx)
 }
 
-
-
 func (r *Registry) Delete(ctx context.Context, nodeID string) error {
-	
+
 	r.slot(nodeID).mu.Lock()
 	r.slot(nodeID).client = nil
 	r.slot(nodeID).mu.Unlock()
 
 	return r.store.DeleteNode(ctx, nodeID)
 }
-
 
 func (r *Registry) Client(ctx context.Context, nodeID string) (provider.StorageNode, error) {
 	record, err := r.store.GetNode(ctx, nodeID)
@@ -250,7 +166,6 @@ func (r *Registry) Client(ctx context.Context, nodeID string) (provider.StorageN
 	return client, nil
 }
 
-
 func (r *Registry) Forget(nodeID string) {
 	slot := r.slot(nodeID)
 
@@ -258,7 +173,6 @@ func (r *Registry) Forget(nodeID string) {
 	defer slot.mu.Unlock()
 	slot.client = nil
 }
-
 
 func (r *Registry) Check(ctx context.Context, nodeID string) (metadata.Node, error) {
 	record, err := r.store.GetNode(ctx, nodeID)
@@ -268,10 +182,7 @@ func (r *Registry) Check(ctx context.Context, nodeID string) (metadata.Node, err
 
 	client, err := r.Client(ctx, nodeID)
 	if err != nil {
-		
-		
-		
-		
+
 		if !errors.Is(err, ErrUnauthorized) {
 			return record, err
 		}
@@ -282,27 +193,17 @@ func (r *Registry) Check(ctx context.Context, nodeID string) (metadata.Node, err
 			return record, recordErr
 		}
 
-		
-		
-		
-		
 		return updated, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, r.checkTimeout)
 	defer cancel()
 
-	
-	
-	
 	identity, quota, probeErr := r.probe(ctx, client)
 
 	if probeErr != nil {
 		health := provider.HealthOf(probeErr)
 
-		
-		
-		
 		if health == provider.HealthUnknown {
 			return record, probeErr
 		}
@@ -314,9 +215,6 @@ func (r *Registry) Check(ctx context.Context, nodeID string) (metadata.Node, err
 		return updated, probeErr
 	}
 
-	
-	
-	
 	status := metadata.NodeStatusHealthy
 	if quota.Known() && quota.Available() == 0 {
 		status = metadata.NodeStatusFull
@@ -325,16 +223,12 @@ func (r *Registry) Check(ctx context.Context, nodeID string) (metadata.Node, err
 	return r.record(ctx, record, status, identity, quota, r.now())
 }
 
-
 func (r *Registry) probe(ctx context.Context, client provider.StorageNode) (
 	provider.Identity, provider.Quota, error) {
 
 	var identity provider.Identity
 	var quota provider.Quota
 
-	
-	
-	
 	idErr := error(nil)
 	identity, idErr = client.Identity(ctx)
 	if idErr != nil {
@@ -350,20 +244,13 @@ func (r *Registry) probe(ctx context.Context, client provider.StorageNode) (
 	return identity, quota, nil
 }
 
-
-
-
-
-
 func (r *Registry) record(
 	ctx context.Context,
 	record metadata.Node,
 	status metadata.NodeStatus,
 	identity provider.Identity,
 	quota provider.Quota,
-	
-	
-	
+
 	seenAt time.Time,
 ) (metadata.Node, error) {
 
@@ -371,10 +258,6 @@ func (r *Registry) record(
 	updated.Status = status
 	updated.UpdatedAt = r.now().UTC()
 
-	
-	
-	
-	
 	if identity.AccountID != "" {
 		updated.AccountIdentifier = identity.AccountID
 	}
@@ -393,12 +276,6 @@ func (r *Registry) record(
 
 	return updated, nil
 }
-
-
-
-
-
-
 
 func (r *Registry) CheckAll(ctx context.Context) ([]metadata.Node, error) {
 	records, err := r.store.ListNodes(ctx)
@@ -431,9 +308,6 @@ func (r *Registry) CheckAll(ctx context.Context) ([]metadata.Node, error) {
 	}
 	wg.Wait()
 
-	
-	
-	
 	var failures []error
 	var reachable int
 	for i := range results {
@@ -446,10 +320,6 @@ func (r *Registry) CheckAll(ctx context.Context) ([]metadata.Node, error) {
 
 	return results, errors.Join(failures...)
 }
-
-
-
-
 
 func statusFor(health provider.Health) metadata.NodeStatus {
 	switch health {
@@ -464,12 +334,10 @@ func statusFor(health provider.Health) metadata.NodeStatus {
 	case provider.HealthHealthy:
 		return metadata.NodeStatusHealthy
 	default:
-		
-		
+
 		return metadata.NodeStatusDegraded
 	}
 }
-
 
 func (r *Registry) slot(nodeID string) *entry {
 	r.mu.Lock()

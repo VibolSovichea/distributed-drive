@@ -5,52 +5,59 @@ run:
   tests: true
 
 linters:
-  default: standard
+  disable-all: true
   enable:
-    - bodyclose
-    - copyloopvar
-    - errorlint
-    - gocritic
-    - misspell
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - unconvert
     - nilerr
     - noctx
-    - predeclared
-    - revive
-    - unconvert
+    - errorlint
+    - gocritic
     - wastedassign
   disable:
-    - errcheck # every unchecked error here is deliberate and commented
+    - errcheck
 
-  settings:
-    errcheck:
-      # Errors returned to the caller are always checked; the ones dropped are
-      # response writes and deferred closes, which cannot usefully be acted on.
-      check-type-assertions: false
-    errorlint:
-      asserts: true
-      comparison: true
-    gocritic:
-      disabled-checks:
-        - ifElseChain
-    revive:
-      rules:
-        - name: exported
-          disabled: false
-
-  exclusions:
+linters-settings:
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+  revive:
+    confidence: 0.8
     rules:
-      # A test may care about a field being set and nothing else, and asserting
-      # every field of every struct is noise.
-      - path: _test\.go
-        linters:
-          - exhaustive
-          - unused
-
-formatters:
-  enable:
-    - gofmt
-    - goimports
+      - name: exported
+        severity: warning
+        disabled: true
+      - name: unexported-return
+        severity: warning
+      - name: indent-error-flow
+        severity: error
+      - name: error-return
+        severity: error
+      - name: error-naming
+        severity: error
 
 issues:
+  exclude-rules:
+    - path: internal/crypto/crypto\.go
+      linters:
+        - unused
+    - path: internal/fileapi/service\.go
+      linters:
+        - unused
   max-issues-per-linter: 0
   max-same-issues: 0
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

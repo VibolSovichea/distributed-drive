@@ -75,8 +75,6 @@ func TestFileTokenStoreEncryptsAtRest(t *testing.T) {
 		t.Fatalf("read the store: %v", err)
 	}
 
-	
-	
 	if bytes.Contains(raw, []byte(secret)) {
 		t.Error("the refresh token appears in plaintext in the token store")
 	}
@@ -138,9 +136,6 @@ func TestFileTokenStoreWrongKey(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	
-	
-	
 	rotated, err := NewFileTokenStore(path, KeyFromSecret("a different secret"))
 	if err != nil {
 		t.Fatalf("NewFileTokenStore: %v", err)
@@ -175,7 +170,7 @@ func TestFileTokenStoreForeignFile(t *testing.T) {
 	t.Parallel()
 
 	store := newTestStore(t)
-	
+
 	if err := os.MkdirAll(filepath.Dir(store.Path()), 0o700); err != nil {
 		t.Fatalf("create the directory: %v", err)
 	}
@@ -209,7 +204,6 @@ func TestFileTokenStoreDelete(t *testing.T) {
 		t.Errorf("after Delete, Load error = %v, want ErrNoToken", err)
 	}
 
-	
 	if err := store.Delete(context.Background()); err != nil {
 		t.Errorf("a repeated Delete must succeed: %v", err)
 	}
@@ -263,8 +257,6 @@ func TestFileTokenStoreSaveIsAtomic(t *testing.T) {
 		t.Errorf("access token = %q, want the second one", got.AccessToken)
 	}
 
-	
-	
 	entries, err := os.ReadDir(filepath.Dir(store.Path()))
 	if err != nil {
 		t.Fatalf("read the directory: %v", err)
@@ -277,7 +269,6 @@ func TestFileTokenStoreSaveIsAtomic(t *testing.T) {
 		t.Errorf("directory holds %v, want only the token file", names)
 	}
 }
-
 
 type stubStore struct {
 	mu      sync.Mutex
@@ -320,16 +311,11 @@ func (s *stubStore) saveCount() int {
 	return s.saves
 }
 
-
-
 type fakeTokenServer struct {
 	*httptest.Server
 
-	
 	refreshed string
 
-	
-	
 	includeRefreshToken bool
 }
 
@@ -354,7 +340,6 @@ func newRefreshServer(t *testing.T, accessToken string, includeRefreshToken bool
 
 	return fake
 }
-
 
 func (f *fakeTokenServer) authConfig() AuthConfig {
 	return AuthConfig{
@@ -398,7 +383,6 @@ func TestTokenSourceRefreshesNearExpiryAndPreservesRefreshToken(t *testing.T) {
 
 	srv := newRefreshServer(t, "access-2", false)
 
-	
 	store := &stubStore{token: &oauth2.Token{
 		AccessToken:  "access-1",
 		RefreshToken: "the-only-refresh-token",
@@ -416,9 +400,6 @@ func TestTokenSourceRefreshesNearExpiryAndPreservesRefreshToken(t *testing.T) {
 		t.Errorf("access token = %q, want the refreshed one", token.AccessToken)
 	}
 
-	
-	
-	
 	if token.RefreshToken != "the-only-refresh-token" {
 		t.Errorf("refresh token = %q, want the stored one carried forward", token.RefreshToken)
 	}
@@ -430,8 +411,6 @@ func TestTokenSourceRefreshesNearExpiryAndPreservesRefreshToken(t *testing.T) {
 func TestTokenSourceWithoutRefreshTokenFails(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	store := &stubStore{token: &oauth2.Token{
 		AccessToken: "expired",
 		TokenType:   "Bearer",
@@ -467,8 +446,6 @@ func TestTokenSourceMissingToken(t *testing.T) {
 func TestTokenSourceTokenWithoutExpiryIsUsed(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	store := &stubStore{token: &oauth2.Token{
 		AccessToken:  "no-expiry",
 		RefreshToken: "refresh",
@@ -520,8 +497,6 @@ func TestAuthorizeRequestsOfflineAccess(t *testing.T) {
 		t.Fatalf("Authorize: %v", err)
 	}
 
-	
-	
 	for _, want := range []string{
 		"access_type=offline",
 		"state=state-123",
@@ -548,11 +523,6 @@ func TestAuthorizeValidatesInput(t *testing.T) {
 		t.Error("an empty state must be rejected")
 	}
 }
-
-
-
-
-
 
 func TestExchangeRequiresCode(t *testing.T) {
 	t.Parallel()
@@ -581,7 +551,6 @@ func TestNewStateIsRandomAndURLSafe(t *testing.T) {
 		}
 		seen[state] = true
 
-		
 		if strings.ContainsAny(state, "+/=&") {
 			t.Fatalf("state %q needs URL escaping", state)
 		}

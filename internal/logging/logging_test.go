@@ -131,8 +131,7 @@ func TestHandlerMatchesNew(t *testing.T) {
 }
 
 func TestDurationIsHumanReadable(t *testing.T) {
-	
-	
+
 	var buf bytes.Buffer
 	New(&buf, "info", "json").Info("test", Duration("timeout", 15*time.Second))
 

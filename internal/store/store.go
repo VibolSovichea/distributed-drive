@@ -1,23 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 package store
 
 import (
@@ -39,68 +19,35 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
 var (
-	
-	
-	
-	
 	ErrNoUsableNodes = errors.New("store: the pool cannot hold a stripe")
 
-	
-	
-	
 	ErrUploadTruncated = errors.New("store: the upload ended early")
 
-	
-	
 	ErrFileNotReadable = errors.New("store: the file is not readable in its current state")
 
-	
-	
 	ErrFileCorrupt = errors.New("store: the file does not match its recorded checksum")
 
-	
-	
-	
 	ErrTooFewShards = errors.New("store: too few shards remain to rebuild a stripe")
 )
-
-
-
-
 
 type NodeResolver interface {
 	Open(ctx context.Context, node metadata.Node) (provider.StorageNode, error)
 }
 
-
 type Options struct {
-	
 	Meta metadata.Store
-	
+
 	Nodes NodeResolver
 
-	
 	Now func() time.Time
-	
+
 	NewID func() string
 
-	
-	
-	
-	
-	
-	
-	
 	ShardConcurrency int
 
-	
-	
-	
 	CipherConfig *crypto.CipherConfig
 }
-
 
 type Store struct {
 	meta  metadata.Store
@@ -111,7 +58,6 @@ type Store struct {
 	concurr int
 	cipher  *crypto.CipherConfig
 }
-
 
 func New(opts Options) (*Store, error) {
 	if opts.Meta == nil {
@@ -145,39 +91,25 @@ func New(opts Options) (*Store, error) {
 	return s, nil
 }
 
-
 type UploadInput struct {
-	
 	PoolID string
-	
+
 	Name string
-	
-	
+
 	ContentType string
 
-	
-	
 	Source io.Reader
 
-	
-	
 	Size int64
 }
 
-
 type uploadProgress struct {
-	
 	total int64
-	
+
 	stripes int
-	
-	
+
 	digest hash.Hash
 }
-
-
-
-
 
 func (s *Store) Upload(ctx context.Context, in UploadInput) (metadata.File, error) {
 	pool, err := s.meta.GetPool(ctx, in.PoolID)
@@ -202,9 +134,6 @@ func (s *Store) Upload(ctx context.Context, in UploadInput) (metadata.File, erro
 		return metadata.File{}, fmt.Errorf("store: the pool's chunk size is unusable: %w", err)
 	}
 
-	
-	
-	
 	file := metadata.File{
 		ID:           s.newID(),
 		PoolID:       pool.ID,
@@ -222,10 +151,7 @@ func (s *Store) Upload(ctx context.Context, in UploadInput) (metadata.File, erro
 
 	progress, err := s.uploadStripes(ctx, in, file, pool, params, codec, splitter)
 	if err != nil {
-		
-		
-		
-		
+
 		return metadata.File{}, err
 	}
 
@@ -239,12 +165,6 @@ func (s *Store) Upload(ctx context.Context, in UploadInput) (metadata.File, erro
 
 	return file, nil
 }
-
-
-
-
-
-
 
 func (s *Store) uploadStripes(
 	ctx context.Context,
@@ -260,16 +180,12 @@ func (s *Store) uploadStripes(
 
 	width := int(pool.ChunkSize)
 
-	
-	
 	data := make([][]byte, pool.DataChunks)
 	for i := range data {
 		data[i] = make([]byte, width)
 	}
 	parity := params.Alloc(width)[params.Data:]
 
-	
-	
 	shards := make([][]byte, 0, params.Shards())
 	sizes := make([]int64, 0, params.Shards())
 
@@ -277,15 +193,9 @@ func (s *Store) uploadStripes(
 
 	for stripe := 0; ; stripe++ {
 
-		
-		
-		
 		clearAll(data)
 		clearAll(parity)
 
-		
-		
-		
 		sizes = sizes[:0]
 		filled := 0
 		for filled < pool.DataChunks {
@@ -297,8 +207,6 @@ func (s *Store) uploadStripes(
 				return progress, fmt.Errorf("store: read stripe %d: %w", stripe, err)
 			}
 
-			
-			
 			copy(data[filled], chunk.Data)
 			sizes = append(sizes, chunk.Size)
 			progress.digest.Write(chunk.Data)
@@ -306,20 +214,14 @@ func (s *Store) uploadStripes(
 		}
 
 		if filled == 0 {
-			
-			
-			
-			
+
 			break
 		}
 
-		
-		
 		for range pool.DataChunks - filled {
 			sizes = append(sizes, 0)
 		}
-		
-		
+
 		for range pool.ParityChunks {
 			sizes = append(sizes, pool.ChunkSize)
 		}
@@ -339,8 +241,6 @@ func (s *Store) uploadStripes(
 			progress.total += sizes[i]
 		}
 
-		
-		
 		file.Size = progress.total
 		file.UpdatedAt = s.now()
 		if err := s.meta.UpdateFile(ctx, file); err != nil {
@@ -356,19 +256,11 @@ func (s *Store) uploadStripes(
 	return progress, nil
 }
 
-
 type shardResult struct {
 	assignment placement.Assignment
 	remote     provider.RemoteObject
 	err        error
 }
-
-
-
-
-
-
-
 
 func (s *Store) writeStripe(
 	ctx context.Context,
@@ -380,15 +272,12 @@ func (s *Store) writeStripe(
 	shards [][]byte,
 	sizes []int64,
 ) error {
-	
-	
+
 	planned := make([]placement.Shard, 0, len(shards))
 	for i, size := range sizes {
 		planned = append(planned, placement.Shard{Stripe: stripe, Index: i, Size: size})
 	}
 
-	
-	
 	nodes, err := s.meta.ListPoolNodes(ctx, pool.ID)
 	if err != nil {
 		return fmt.Errorf("store: list the pool's nodes: %w", err)
@@ -404,7 +293,6 @@ func (s *Store) writeStripe(
 		assignment := plan[i]
 		result := shardResult{assignment: assignment}
 
-		
 		var fileKey []byte
 		if s.cipher.Enabled() && file.Encrypted {
 			key, err := crypto.DeriveKey(s.cipher.MasterKey, file.ID)
@@ -428,9 +316,6 @@ func (s *Store) writeStripe(
 		results[i] = result
 	})
 
-	
-	
-	
 	written := make([]shardResult, 0, len(results))
 	var firstErr error
 	for _, r := range results {
@@ -447,9 +332,6 @@ func (s *Store) writeStripe(
 		return firstErr
 	}
 
-	
-	
-	
 	now := s.now()
 	chunks := make([]metadata.Chunk, 0, len(written))
 	for _, r := range written {
@@ -466,27 +348,20 @@ func (s *Store) writeStripe(
 			ChunkType:    shardType,
 			RemoteFileID: r.remote.ID,
 			Size:         r.assignment.Size,
-			
-			
-			
-			
+
 			Hash:      chunker.Hash(shards[r.assignment.Index]),
 			CreatedAt: now,
 		})
 	}
 
 	if err := s.meta.CreateChunks(ctx, chunks); err != nil {
-		
-		
-		
-		
+
 		_ = s.rollback(ctx, sess, written)
 		return fmt.Errorf("store: record stripe %d: %w", stripe, err)
 	}
 
 	return nil
 }
-
 
 func (s *Store) rollback(ctx context.Context, sess *session, written []shardResult) error {
 	var errs []error
@@ -508,8 +383,6 @@ func clearAll(bufs [][]byte) {
 func shardName(fileName string, stripe, index int) string {
 	return fmt.Sprintf("%s.s%04d.sh%04d", fileName, stripe, index)
 }
-
-
 
 func shardDescription(fileID, poolID, hash string) string {
 	return fmt.Sprintf("distributed-drive file=%s pool=%s sha256=%s", fileID, poolID, hash)

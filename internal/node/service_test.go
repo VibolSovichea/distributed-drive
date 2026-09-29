@@ -13,7 +13,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
 type fakeStore struct {
 	mu sync.Mutex
 
@@ -91,7 +90,6 @@ func (s *fakeStore) count() int {
 	return len(s.nodes)
 }
 
-
 type fakeNode struct {
 	mu sync.Mutex
 
@@ -101,7 +99,6 @@ type fakeNode struct {
 	quota    provider.Quota
 	quotaErr error
 
-	
 	opened int
 }
 
@@ -136,18 +133,13 @@ func (f *fakeNode) openCount() int {
 	return f.opened
 }
 
-
 type fakeFactory struct {
 	mu sync.Mutex
 
-	
-	
-	
-	
 	nodes map[string]*fakeNode
-	
+
 	openErr error
-	
+
 	perNodeErr map[string]error
 
 	opens int
@@ -227,8 +219,7 @@ func TestRegisterRecordsAccountAndCapacity(t *testing.T) {
 	if record.ID == "" {
 		t.Error("Register assigned no id")
 	}
-	
-	
+
 	if record.AccountIdentifier != "user-1" {
 		t.Errorf("account identifier = %q, want user-1", record.AccountIdentifier)
 	}
@@ -258,8 +249,6 @@ func TestRegisterWritesRecordEvenWhenCredentialsAreWrong(t *testing.T) {
 	record, err := reg.Register(context.Background(),
 		RegisterInput{Name: "drive-1", Provider: metadata.ProviderGoogleDrive})
 
-	
-	
 	if err == nil {
 		t.Error("Register should report that the account could not be contacted")
 	}
@@ -384,9 +373,6 @@ func TestCheckRecordsFullWhenQuotaIsExhausted(t *testing.T) {
 	store := newFakeStore()
 	factory := newFakeFactory()
 
-	
-	
-	
 	node := healthyNode("user-1", provider.Quota{Total: 100, Used: 100})
 	factory.add("drive-1", node)
 
@@ -416,14 +402,12 @@ func TestCheckLeavesStatusAloneWhenContextIsCancelled(t *testing.T) {
 
 	reg := newTestRegistry(store, factory)
 
-	
 	record, err := reg.Register(context.Background(),
 		RegisterInput{Name: "drive-1", Provider: metadata.ProviderGoogleDrive})
 	if err != nil {
 		t.Fatalf("Register: %v", err)
 	}
 
-	
 	node.mu.Lock()
 	node.identityErr = context.Canceled
 	node.mu.Unlock()
@@ -436,9 +420,6 @@ func TestCheckLeavesStatusAloneWhenContextIsCancelled(t *testing.T) {
 		t.Fatal("a cancelled check must report an error")
 	}
 
-	
-	
-	
 	if after.Status != metadata.NodeStatusHealthy {
 		t.Errorf("status = %q, want it left at healthy", after.Status)
 	}
@@ -465,7 +446,6 @@ func TestCheckDoesNotOverwriteLastSeenOnFailure(t *testing.T) {
 	}
 	firstSeen := *record.LastSeen
 
-	
 	clock = clock.Add(time.Hour)
 	node.mu.Lock()
 	node.quotaErr = provider.Unavailablef(errors.New("down"))
@@ -476,8 +456,6 @@ func TestCheckDoesNotOverwriteLastSeenOnFailure(t *testing.T) {
 		t.Fatal("Check should report the failure")
 	}
 
-	
-	
 	if after.LastSeen == nil || !after.LastSeen.Equal(firstSeen) {
 		t.Errorf("LastSeen = %v, want it left at %v", after.LastSeen, firstSeen)
 	}
@@ -507,7 +485,6 @@ func TestCheckRecoversFromAuthError(t *testing.T) {
 		t.Fatalf("status = %q, want auth_error", record.Status)
 	}
 
-	
 	node.mu.Lock()
 	node.identityErr = nil
 	node.mu.Unlock()
@@ -543,9 +520,6 @@ func TestClientCachesTheProviderClient(t *testing.T) {
 		}
 	}
 
-	
-	
-	
 	if got := factory.openCount(); got != first {
 		t.Errorf("the factory was called %d more times; the client is not cached", got-first)
 	}
@@ -610,8 +584,6 @@ func TestClientWithoutAuthorisationIsDistinct(t *testing.T) {
 		t.Errorf("error = %v, want it to wrap ErrUnauthorized", err)
 	}
 
-	
-	
 	record, _ := store.ListNodes(context.Background())
 	if len(record) != 1 {
 		t.Fatalf("%d rows, want 1", len(record))
@@ -639,8 +611,6 @@ func TestBrokenFactoryLeavesStatusAlone(t *testing.T) {
 		t.Fatalf("Register: %v", err)
 	}
 
-	
-	
 	factory.mu.Lock()
 	factory.openErr = errors.New("misconfigured")
 	factory.mu.Unlock()
@@ -701,7 +671,7 @@ func TestCheckAllVisitsEveryNodeAndKeepsGoing(t *testing.T) {
 	for _, name := range []string{"a", "b", "c"} {
 		record, err := reg.Register(context.Background(),
 			RegisterInput{Name: name, Provider: metadata.ProviderGoogleDrive})
-		
+
 		if record.ID == "" {
 			t.Fatalf("Register(%s) produced no record: %v", name, err)
 		}
@@ -717,8 +687,6 @@ func TestCheckAllVisitsEveryNodeAndKeepsGoing(t *testing.T) {
 		t.Error("CheckAll should report the unreachable node")
 	}
 
-	
-	
 	if len(results) != 3 {
 		t.Fatalf("CheckAll returned %d results, want 3", len(results))
 	}
@@ -762,8 +730,6 @@ func TestCheckAllIsConcurrencySafe(t *testing.T) {
 		t.Fatalf("CheckAll: %v", err)
 	}
 
-	
-	
 	if _, err := reg.CheckAll(context.Background()); err != nil {
 		t.Fatalf("CheckAll again: %v", err)
 	}
@@ -800,9 +766,6 @@ func TestStatusForCoversEveryProviderHealth(t *testing.T) {
 		}
 	}
 
-	
-	
-	
 	if got := statusFor(provider.HealthUnknown); got == metadata.NodeStatusUnknown {
 		t.Error("statusFor(HealthUnknown) produced the zero status")
 	}
@@ -827,8 +790,6 @@ func TestFailedStatusUpdateIsReported(t *testing.T) {
 	store.updErr = errors.New("disk full")
 	store.mu.Unlock()
 
-	
-	
 	if _, err := reg.Check(context.Background(), record.ID); err == nil {
 		t.Error("a failed status write must be reported")
 	}

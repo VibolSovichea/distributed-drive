@@ -12,15 +12,6 @@ import (
 	sqlite3 "modernc.org/sqlite/lib"
 )
 
-
-
-
-
-
-
-
-
-
 func classify(op string, err error) error {
 	if err == nil {
 		return nil
@@ -49,27 +40,17 @@ func classify(op string, err error) error {
 	}
 }
 
-
-
-
 func isCancellation(err error) bool {
 	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }
-
-
-
 
 func isNoRows(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)
 }
 
-
 func notFound(entity, id string) error {
 	return fmt.Errorf("%w: %s %q", metadata.ErrNotFound, entity, id)
 }
-
-
-
 
 func errMissingID(entity string) error {
 	return fmt.Errorf("%w: %s id must be assigned before persisting", metadata.ErrInvalid, entity)

@@ -23,9 +23,8 @@ RUN CGO_ENABLED=0 go build \
       -ldflags "-s -w -X github.com/VibolSovichea/distributed-drive/internal/api.version=${VERSION}" \
       -o /out/distributed-drive ./cmd/server
 
-# Run the tests inside the image build. A commit that does not compile never
-# produces an image at all.
-RUN go vet ./... && go test ./...
+# Run vet in the image build. Tests run in the Verify CI job with race detector.
+RUN go vet ./...
 
 FROM alpine:3.20
 

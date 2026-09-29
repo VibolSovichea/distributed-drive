@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 package sqlite
 
 import (
@@ -15,22 +8,14 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
-
-
 type Store struct {
 	db    dbtx
 	owned bool
 }
 
-
 func New(db *sql.DB) *Store {
 	return &Store{db: db, owned: true}
 }
-
-
-
 
 type dbtx interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -40,15 +25,12 @@ type dbtx interface {
 
 var _ metadata.Store = (*Store)(nil)
 
-
 func (s *Store) Ping(ctx context.Context) error {
 	if _, err := s.db.ExecContext(ctx, "SELECT 1"); err != nil {
 		return classify("ping", err)
 	}
 	return nil
 }
-
-
 
 func (s *Store) Close() error {
 	if !s.owned {
@@ -64,13 +46,9 @@ func (s *Store) Close() error {
 	return nil
 }
 
-
-
 type beginner interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 }
-
-
 
 func (s *Store) WithTx(ctx context.Context, fn func(ctx context.Context, tx metadata.Store) error) error {
 	db, ok := s.db.(beginner)
@@ -86,8 +64,7 @@ func (s *Store) WithTx(ctx context.Context, fn func(ctx context.Context, tx meta
 	committed := false
 	defer func() {
 		if !committed {
-			
-			
+
 			_ = tx.Rollback()
 		}
 	}()
@@ -103,8 +80,6 @@ func (s *Store) WithTx(ctx context.Context, fn func(ctx context.Context, tx meta
 	return nil
 }
 
-
-
 func wrap(op string, err error) error {
 	if err == nil {
 		return nil
@@ -114,11 +89,6 @@ func wrap(op string, err error) error {
 	}
 	return fmt.Errorf("sqlite: %s: %w", op, err)
 }
-
-
-
-
-
 
 func (s *Store) inTransaction(ctx context.Context, body func(ctx context.Context, tx *sql.Tx) error) error {
 	if tx, ok := s.db.(*sql.Tx); ok {
@@ -146,7 +116,6 @@ func (s *Store) inTransaction(ctx context.Context, body func(ctx context.Context
 	return nil
 }
 
-
 func (s *Store) exec(ctx context.Context, op, query string, args ...any) (sql.Result, error) {
 	res, err := s.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -154,7 +123,6 @@ func (s *Store) exec(ctx context.Context, op, query string, args ...any) (sql.Re
 	}
 	return res, nil
 }
-
 
 func (s *Store) query(ctx context.Context, op, query string, args ...any) (*sql.Rows, error) {
 	rows, err := s.db.QueryContext(ctx, query, args...)

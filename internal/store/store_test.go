@@ -13,17 +13,11 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
-
 const smallChunk = metadata.MinChunkSize
 
 func TestARoundTripReturnsTheOriginalBytes(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	for _, size := range []int64{
 		0,
 		1,
@@ -62,17 +56,13 @@ func TestAnEmptyFileHasNoShardsAndStillDownloads(t *testing.T) {
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	file := h.upload(t, "empty.bin", nil)
 
-	
-	
-	
 	if chunks := h.chunks(t, file.ID); len(chunks) != 0 {
 		t.Errorf("an empty file has %d shard rows, want 0", len(chunks))
 	}
 	if file.Size != 0 {
 		t.Errorf("file.Size = %d, want 0", file.Size)
 	}
-	
-	
+
 	if want := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"; file.ContentHash != want {
 		t.Errorf("ContentHash = %q, want the digest of no bytes", file.ContentHash)
 	}
@@ -107,8 +97,6 @@ func TestTheFileSpansAsManyStripesAsItsSizeRequires(t *testing.T) {
 	for _, tc := range tests {
 		file := h.upload(t, fmt.Sprintf("f-%d.bin", tc.size), pattern(tc.size, byte(tc.size)))
 
-		
-		
 		if got, want := len(h.chunks(t, file.ID)), tc.stripes*4; got != want {
 			t.Errorf("size %d: %d shard rows, want %d (%d stripes of 4)",
 				tc.size, got, want, tc.stripes)
@@ -119,8 +107,6 @@ func TestTheFileSpansAsManyStripesAsItsSizeRequires(t *testing.T) {
 func TestEveryShardOfAStripeLandsOnItsOwnAccount(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 6})
 	file := h.upload(t, "f.bin", pattern(5*smallChunk+7, 3))
 
@@ -150,7 +136,6 @@ func TestEveryShardOfAStripeLandsOnItsOwnAccount(t *testing.T) {
 func TestShardSizesAreTheTrueOnesNotThePaddedOnes(t *testing.T) {
 	t.Parallel()
 
-	
 	const tail = 100
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	file := h.upload(t, "f.bin", pattern(4*smallChunk+tail, 9))
@@ -163,7 +148,6 @@ func TestShardSizesAreTheTrueOnesNotThePaddedOnes(t *testing.T) {
 		byStripe[chunk.StripeIndex][chunk.Index] = chunk
 	}
 
-	
 	for stripe := range 2 {
 		for i := range 2 {
 			chunk, ok := byStripe[stripe][i]
@@ -176,9 +160,6 @@ func TestShardSizesAreTheTrueOnesNotThePaddedOnes(t *testing.T) {
 		}
 	}
 
-	
-	
-	
 	last := byStripe[2]
 	if got := last[0].Size; got != tail {
 		t.Errorf("last stripe data 0: size %d, want the file's tail of %d", got, tail)
@@ -187,9 +168,6 @@ func TestShardSizesAreTheTrueOnesNotThePaddedOnes(t *testing.T) {
 		t.Errorf("last stripe data 1: size %d, want 0 for a padding slot", got)
 	}
 
-	
-	
-	
 	for i := 2; i < 4; i++ {
 		for stripe := range byStripe {
 			chunk, ok := byStripe[stripe][i]
@@ -209,9 +187,6 @@ func TestShardSizesAreTheTrueOnesNotThePaddedOnes(t *testing.T) {
 func TestEveryStripeIsStoredAtFullWidth(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	file := h.upload(t, "f.bin", pattern(2*smallChunk+10, 4))
 
@@ -231,9 +206,6 @@ func TestEveryStripeIsStoredAtFullWidth(t *testing.T) {
 func TestShardDigestsCoverTheStoredBytes(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	file := h.upload(t, "f.bin", pattern(2*smallChunk+10, 5))
 
@@ -253,15 +225,11 @@ func TestShardDigestsCoverTheStoredBytes(t *testing.T) {
 func TestAFileSurvivesLosingUpToMShardsPerStripe(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	for lost := 1; lost <= 2; lost++ {
 		h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 		body := pattern(3*smallChunk+50, byte(lost))
 		file := h.upload(t, "f.bin", body)
 
-		
-		
 		chunks := h.chunks(t, file.ID)
 		stripes := make(map[int][]metadata.Chunk)
 		for _, chunk := range chunks {
@@ -288,9 +256,6 @@ func TestAFileSurvivesLosingUpToMShardsPerStripe(t *testing.T) {
 func TestLosingMoreThanMShardsIsReported(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk+10, 6)
 	file := h.upload(t, "f.bin", body)
@@ -312,11 +277,6 @@ func TestLosingMoreThanMShardsIsReported(t *testing.T) {
 func TestLosingAWholeStripeIsNotRecoverable(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(3*smallChunk, 7)
 	file := h.upload(t, "f.bin", body)
@@ -340,16 +300,10 @@ func TestLosingAWholeStripeIsNotRecoverable(t *testing.T) {
 func TestACorruptShardIsRebuiltRatherThanBelieved(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(2*smallChunk+9, 8)
 	file := h.upload(t, "f.bin", body)
 
-	
-	
 	group := h.chunks(t, file.ID)
 	h.scramble(t, group[0])
 	h.scramble(t, group[3])
@@ -366,9 +320,6 @@ func TestACorruptShardIsRebuiltRatherThanBelieved(t *testing.T) {
 func TestCorruptionBeyondTheParityIsReportedNotSilentlyRebuilt(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk+3, 9)
 	file := h.upload(t, "f.bin", body)
@@ -387,16 +338,12 @@ func TestCorruptionBeyondTheParityIsReportedNotSilentlyRebuilt(t *testing.T) {
 func TestAMissingRowIsTreatedAsALostShard(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk+21, 10)
 	file := h.upload(t, "f.bin", body)
 
 	group := h.chunks(t, file.ID)
-	
-	
+
 	group[0].RemoteFileID = "obj-does-not-exist"
 	if err := h.meta.ReplaceChunk(t.Context(), group[0]); err != nil {
 		t.Fatalf("ReplaceChunk() = %v", err)
@@ -414,10 +361,6 @@ func TestAMissingRowIsTreatedAsALostShard(t *testing.T) {
 func TestTwoShardsOnOneAccountAreRefused(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk, 11)
 	file := h.upload(t, "f.bin", body)
@@ -438,13 +381,10 @@ func TestTwoShardsOnOneAccountAreRefused(t *testing.T) {
 func TestAWrongWholeFileDigestIsCaught(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk+5, 12)
 	file := h.upload(t, "f.bin", body)
 
-	
 	file.ContentHash = chunker.Hash([]byte("not this file"))
 	if err := h.meta.UpdateFile(t.Context(), file); err != nil {
 		t.Fatalf("UpdateFile() = %v", err)
@@ -459,9 +399,6 @@ func TestAWrongWholeFileDigestIsCaught(t *testing.T) {
 func TestAnUnfinishedFileCannotBeDownloaded(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	file := h.upload(t, "f.bin", pattern(smallChunk, 13))
 
@@ -478,10 +415,6 @@ func TestAnUnfinishedFileCannotBeDownloaded(t *testing.T) {
 func TestADegradedFileBecomesCommittedOnceItReadsBackWhole(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk+7, 14)
 	file := h.upload(t, "f.bin", body)
@@ -507,8 +440,6 @@ func TestADegradedFileBecomesCommittedOnceItReadsBackWhole(t *testing.T) {
 func TestAnAbandonedDownloadChangesNothing(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(3*smallChunk, 15)
 	file := h.upload(t, "f.bin", body)
@@ -541,9 +472,6 @@ func TestAnAbandonedDownloadChangesNothing(t *testing.T) {
 func TestATruncatedUploadIsCaughtByCounting(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 
 	_, err := h.store.Upload(t.Context(), UploadInput{
@@ -560,9 +488,6 @@ func TestATruncatedUploadIsCaughtByCounting(t *testing.T) {
 func TestAPoolTooSmallForAStripeRefusesBeforeWritingAnything(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 3, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk, 17)
 
@@ -575,7 +500,6 @@ func TestAPoolTooSmallForAStripeRefusesBeforeWritingAnything(t *testing.T) {
 		t.Errorf("Upload() = %v, want ErrNoUsableNodes", err)
 	}
 
-	
 	for id, node := range h.nodes {
 		if live := node.live(); live != 0 {
 			t.Errorf("node %s holds %d objects, want 0", id, live)
@@ -586,13 +510,8 @@ func TestAPoolTooSmallForAStripeRefusesBeforeWritingAnything(t *testing.T) {
 func TestAFailedWriteRollsBackTheShardsThatLanded(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4, concurr: 1})
 
-	
-	
 	h.nodes["node-2"].failWrite = true
 
 	_, err := h.store.Upload(t.Context(), UploadInput{
@@ -620,8 +539,6 @@ func TestAFailedWriteRollsBackTheShardsThatLanded(t *testing.T) {
 func TestAnUncommittedFileRowIsLeftBehindOnPurpose(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	h.nodes["node-2"].failWrite = true
 
@@ -649,9 +566,6 @@ func TestAnUncommittedFileRowIsLeftBehindOnPurpose(t *testing.T) {
 func TestTheContentHashIsOfTheOriginalBytes(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(3*smallChunk+11, 20)
 
@@ -664,8 +578,6 @@ func TestTheContentHashIsOfTheOriginalBytes(t *testing.T) {
 func TestAPoolWithNoParityRefusesToDownloadOnceAShardIsLost(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 0, chunk: smallChunk, nodes: 3})
 	body := pattern(smallChunk, 21)
 	file := h.upload(t, "f.bin", body)
@@ -680,9 +592,6 @@ func TestAPoolWithNoParityRefusesToDownloadOnceAShardIsLost(t *testing.T) {
 func TestEachStripeIsRebuiltOnlyOncePerDownload(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(5*smallChunk+13, 22)
 	file := h.upload(t, "f.bin", body)
@@ -693,7 +602,6 @@ func TestEachStripeIsRebuiltOnlyOncePerDownload(t *testing.T) {
 	}
 	defer reader.Close()
 
-	
 	var got []byte
 	buf := make([]byte, 1)
 	for {
@@ -715,9 +623,6 @@ func TestEachStripeIsRebuiltOnlyOncePerDownload(t *testing.T) {
 func TestAMultiStripeFileSurvivesLossInEveryStripeAtOnce(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 3, m: 2, chunk: smallChunk, nodes: 6})
 	body := pattern(6*smallChunk+77, 23)
 	file := h.upload(t, "f.bin", body)
@@ -726,12 +631,11 @@ func TestAMultiStripeFileSurvivesLossInEveryStripeAtOnce(t *testing.T) {
 	for _, chunk := range h.chunks(t, file.ID) {
 		stripes[chunk.StripeIndex] = append(stripes[chunk.StripeIndex], chunk)
 	}
-	
-	
+
 	if len(stripes) != 3 {
 		t.Fatalf("got %d stripes, want 3", len(stripes))
 	}
-	
+
 	h.take(t, stripes[0][0])
 	h.take(t, stripes[1][0])
 	h.take(t, stripes[1][4])
@@ -748,9 +652,6 @@ func TestAMultiStripeFileSurvivesLossInEveryStripeAtOnce(t *testing.T) {
 func TestAProviderFailureDoesNotLookLikeCorruption(t *testing.T) {
 	t.Parallel()
 
-	
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(smallChunk+6, 24)
 	file := h.upload(t, "f.bin", body)
@@ -777,7 +678,6 @@ func TestDetectLostFindsMissingObjects(t *testing.T) {
 	body := pattern(3*smallChunk, 100)
 	file := h.upload(t, "f.bin", body)
 
-	
 	group := h.chunks(t, file.ID)
 	h.take(t, group[0])
 
@@ -799,7 +699,6 @@ func TestDetectLostIgnoresUploadingFiles(t *testing.T) {
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	file := h.upload(t, "f.bin", pattern(smallChunk, 101))
 
-	
 	file.Status = metadata.FileStatusUploading
 	if err := h.meta.UpdateFile(t.Context(), file); err != nil {
 		t.Fatalf("UpdateFile() = %v", err)
@@ -821,17 +720,14 @@ func TestRepairFileRestoresLostShard(t *testing.T) {
 	body := pattern(3*smallChunk, 102)
 	file := h.upload(t, "f.bin", body)
 
-	
 	group := h.chunks(t, file.ID)
 	h.take(t, group[0])
 
-	
 	lost, _ := h.store.DetectLost(t.Context(), h.pool.ID)
 	if len(lost) != 1 {
 		t.Fatalf("DetectLost() = %d, want 1", len(lost))
 	}
 
-	
 	result, err := h.store.RepairFile(t.Context(), file.ID)
 	if err != nil {
 		t.Fatalf("RepairFile() = %v", err)
@@ -846,7 +742,6 @@ func TestRepairFileRestoresLostShard(t *testing.T) {
 		t.Errorf("status = %s, want committed", file.Status)
 	}
 
-	
 	got, err := h.download(t, file.ID)
 	if err != nil {
 		t.Fatalf("Download() = %v", err)
@@ -855,7 +750,6 @@ func TestRepairFileRestoresLostShard(t *testing.T) {
 		t.Errorf("repaired file content mismatch")
 	}
 
-	
 	lost, _ = h.store.DetectLost(t.Context(), h.pool.ID)
 	if len(lost) != 0 {
 		t.Errorf("DetectLost() = %d, want 0 after repair", len(lost))
@@ -865,16 +759,13 @@ func TestRepairFileRestoresLostShard(t *testing.T) {
 func TestRepairFileHandlesCorruptShard(t *testing.T) {
 	t.Parallel()
 
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 5})
 	body := pattern(2*smallChunk+10, 103)
 	file := h.upload(t, "f.bin", body)
 
-	
 	group := h.chunks(t, file.ID)
 	h.scramble(t, group[0])
 
-	
 	result, err := h.store.RepairFile(t.Context(), file.ID)
 	if err != nil {
 		t.Fatalf("RepairFile() = %v", err)
@@ -898,7 +789,6 @@ func TestRepairFileHandlesCorruptShard(t *testing.T) {
 func TestRepairFileFailsWhenTooManyLost(t *testing.T) {
 	t.Parallel()
 
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 5})
 	body := pattern(smallChunk, 104)
 	file := h.upload(t, "f.bin", body)
@@ -919,7 +809,6 @@ func TestRepairFileFailsWhenTooManyLost(t *testing.T) {
 		t.Errorf("Unrepaired = %v, want [0]", result.Unrepaired)
 	}
 
-	
 	file, err = h.meta.GetFile(t.Context(), file.ID)
 	if err != nil {
 		t.Fatalf("GetFile() = %v", err)
@@ -936,7 +825,6 @@ func TestScrubFileDetectsCorruption(t *testing.T) {
 	body := pattern(2*smallChunk+10, 105)
 	file := h.upload(t, "f.bin", body)
 
-	
 	group := h.chunks(t, file.ID)
 	h.scramble(t, group[0])
 
@@ -955,8 +843,6 @@ func TestScrubFileDetectsCorruption(t *testing.T) {
 func TestScrubFileHealthyFile(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 	body := pattern(3*smallChunk, 106)
 	file := h.upload(t, "f.bin", body)
@@ -971,7 +857,7 @@ func TestScrubFileHealthyFile(t *testing.T) {
 	if !result.Healthy {
 		t.Error("file should be healthy")
 	}
-	if result.Verified != 8 { 
+	if result.Verified != 8 {
 		t.Errorf("Verified = %d, want 8", result.Verified)
 	}
 }
@@ -983,7 +869,6 @@ func TestRepairPoolRepairsMultipleFiles(t *testing.T) {
 	file1 := h.upload(t, "f1.bin", pattern(2*smallChunk, 107))
 	file2 := h.upload(t, "f2.bin", pattern(3*smallChunk, 108))
 
-	
 	group1 := h.chunks(t, file1.ID)
 	h.take(t, group1[0])
 	group2 := h.chunks(t, file2.ID)
@@ -1011,11 +896,8 @@ func TestSweepAbandonedRemovesUploadingFile(t *testing.T) {
 
 	h := newHarness(t, harnessOpts{k: 2, m: 2, chunk: smallChunk, nodes: 4})
 
-	
 	file := h.upload(t, "abandoned.bin", pattern(smallChunk, 109))
 
-	
-	
 	oldTime := h.now.Add(-2 * time.Hour)
 	file.Status = metadata.FileStatusUploading
 	file.UpdatedAt = oldTime
@@ -1023,7 +905,6 @@ func TestSweepAbandonedRemovesUploadingFile(t *testing.T) {
 		t.Fatalf("UpdateFile() = %v", err)
 	}
 
-	
 	swept, err := h.store.SweepAbandoned(t.Context(), time.Hour)
 	if err != nil {
 		t.Fatalf("SweepAbandoned() = %v", err)
@@ -1032,7 +913,6 @@ func TestSweepAbandonedRemovesUploadingFile(t *testing.T) {
 		t.Errorf("swept = %d, want 1", swept)
 	}
 
-	
 	files, _ := h.meta.ListPoolFiles(t.Context(), h.pool.ID)
 	for _, f := range files {
 		if f.ID == file.ID {
@@ -1061,7 +941,6 @@ func TestSweepAbandonedSkipsRecentUploads(t *testing.T) {
 		t.Errorf("swept = %d, want 0", swept)
 	}
 
-	
 	files, _ := h.meta.ListPoolFiles(t.Context(), h.pool.ID)
 	found := false
 	for _, f := range files {

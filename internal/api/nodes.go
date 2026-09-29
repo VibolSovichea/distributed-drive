@@ -13,7 +13,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/pool"
 )
 
-
 type NodeService interface {
 	Register(ctx context.Context, input node.RegisterInput) (metadata.Node, error)
 	Get(ctx context.Context, nodeID string) (metadata.Node, error)
@@ -23,13 +22,11 @@ type NodeService interface {
 	CheckAll(ctx context.Context) ([]metadata.Node, error)
 }
 
-
 type nodeResponse struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Provider string `json:"provider"`
-	
-	
+
 	Account   string `json:"account"`
 	Status    string `json:"status"`
 	Capacity  int64  `json:"capacity"`
@@ -66,13 +63,6 @@ func s(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-
-
-
-
-
-
-
 func (s *Server) handleRegisterNode(w http.ResponseWriter, r *http.Request) {
 	var body createNodeRequest
 	if err := decodeJSON(w, r, &body); err != nil {
@@ -86,8 +76,7 @@ func (s *Server) handleRegisterNode(w http.ResponseWriter, r *http.Request) {
 		Root:     body.Root,
 	})
 	if err != nil {
-		
-		
+
 		if isUnauthorisedNode(err) && record.ID != "" {
 			s.logger.WarnContext(r.Context(), "node registered but not reachable",
 				"nodeId", record.ID, "status", record.Status, "error", err)
@@ -103,11 +92,9 @@ func (s *Server) handleRegisterNode(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusCreated, toNodeResponse(record))
 }
 
-
 func isUnauthorisedNode(err error) bool {
 	return errors.Is(err, node.ErrUnauthorized) || errors.Is(err, node.ErrNoClient)
 }
-
 
 func (s *Server) handleListNodes(w http.ResponseWriter, r *http.Request) {
 	nodes, err := s.nodes.List(r.Context())
@@ -123,7 +110,6 @@ func (s *Server) handleListNodes(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusOK, map[string]any{"nodes": out})
 }
 
-
 func (s *Server) handleGetNode(w http.ResponseWriter, r *http.Request) {
 	record, err := s.nodes.Get(r.Context(), chi.URLParam(r, "nodeID"))
 	if err != nil {
@@ -133,13 +119,10 @@ func (s *Server) handleGetNode(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusOK, toNodeResponse(record))
 }
 
-
 func (s *Server) handleNodeStatus(w http.ResponseWriter, r *http.Request) {
 	record, err := s.nodes.Check(r.Context(), chi.URLParam(r, "nodeID"))
 	if err != nil {
-		
-		
-		
+
 		if record.ID != "" {
 			s.logger.WarnContext(r.Context(), "node check reported a problem",
 				"nodeId", record.ID, "status", record.Status, "error", err)
@@ -152,12 +135,9 @@ func (s *Server) handleNodeStatus(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusOK, toNodeResponse(record))
 }
 
-
 func (s *Server) handleCheckAllNodes(w http.ResponseWriter, r *http.Request) {
 	records, err := s.nodes.CheckAll(r.Context())
 
-	
-	
 	if err != nil {
 		s.logger.WarnContext(r.Context(), "some nodes could not be checked", "error", err)
 	}
@@ -168,8 +148,6 @@ func (s *Server) handleCheckAllNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	s.writeJSON(w, r, http.StatusOK, map[string]any{"nodes": out})
 }
-
-
 
 func (s *Server) handleDeleteNode(w http.ResponseWriter, r *http.Request) {
 	nodeID := chi.URLParam(r, "nodeID")
@@ -184,7 +162,6 @@ func (s *Server) handleDeleteNode(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
-
 
 func (s *Server) handleAttachNode(w http.ResponseWriter, r *http.Request) {
 	var body attachNodeRequest
@@ -201,9 +178,6 @@ func (s *Server) handleAttachNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-	
-	
 	capacity, err := s.pools.Capacity(r.Context(), poolID)
 	if err != nil {
 		s.logger.WarnContext(r.Context(), "node attached but capacity unavailable",
@@ -216,15 +190,13 @@ func (s *Server) handleAttachNode(w http.ResponseWriter, r *http.Request) {
 		map[string]any{"node": toNodeResponse(record), "capacity": capacity})
 }
 
-
 func (s *Server) handleDetachNode(w http.ResponseWriter, r *http.Request) {
 	poolID := chi.URLParam(r, "poolID")
 	nodeID := chi.URLParam(r, "nodeID")
 
 	if err := s.pools.RemoveNode(r.Context(), poolID, nodeID); err != nil {
 		if errors.Is(err, pool.ErrHasData) {
-			
-			
+
 			s.writeError(w, r, http.StatusConflict, codeConflict,
 				"the node still holds data; delete the pool's files before detaching it")
 			return
@@ -236,7 +208,6 @@ func (s *Server) handleDetachNode(w http.ResponseWriter, r *http.Request) {
 	s.logger.InfoContext(r.Context(), "node detached from pool", "poolId", poolID, "nodeId", nodeID)
 	s.writeJSON(w, r, http.StatusOK, map[string]any{"detached": nodeID})
 }
-
 
 func (s *Server) handleListPoolNodes(w http.ResponseWriter, r *http.Request) {
 	nodes, err := s.pools.ListNodes(r.Context(), chi.URLParam(r, "poolID"))
@@ -252,19 +223,13 @@ func (s *Server) handleListPoolNodes(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, r, http.StatusOK, map[string]any{"nodes": out})
 }
 
-
 type createNodeRequest struct {
-	
 	Name string `json:"name"`
-	
-	
-	
+
 	Provider string `json:"provider"`
-	
-	
+
 	Root string `json:"root,omitempty"`
 }
-
 
 type attachNodeRequest struct {
 	NodeID string `json:"nodeId"`

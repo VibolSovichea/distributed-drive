@@ -13,22 +13,15 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-
 type Cipher interface {
-	
-	
 	Seal(key []byte, plaintext []byte, nonce []byte) ([]byte, error)
 
-	
 	Open(key []byte, ciphertext []byte, nonce []byte) ([]byte, error)
 
-	
 	Overhead() int
 
-	
 	NonceSize() int
 }
-
 
 type AESGCM struct{}
 
@@ -56,9 +49,8 @@ func (AESGCM) Open(key []byte, ciphertext []byte, nonce []byte) ([]byte, error) 
 	return aead.Open(nil, nonce, ciphertext, nil)
 }
 
-func (AESGCM) Overhead() int  { return 16 } 
+func (AESGCM) Overhead() int  { return 16 }
 func (AESGCM) NonceSize() int { return 12 }
-
 
 type XChaCha20Poly1305 struct{}
 
@@ -78,27 +70,18 @@ func (XChaCha20Poly1305) Open(key []byte, ciphertext []byte, nonce []byte) ([]by
 	return aead.Open(nil, nonce, ciphertext, nil)
 }
 
-func (XChaCha20Poly1305) Overhead() int  { return 24 } 
+func (XChaCha20Poly1305) Overhead() int  { return 24 }
 func (XChaCha20Poly1305) NonceSize() int { return 24 }
-
 
 var DefaultCipher Cipher = AESGCM{}
 
-
-const KeySize = 32 
-
+const KeySize = 32
 
 var ErrInvalidKey = errors.New("crypto: key must be 32 bytes")
 
-
 var ErrInvalidNonce = errors.New("crypto: nonce has wrong size")
 
-
 var ErrDecrypt = errors.New("crypto: decryption failed")
-
-
-
-
 
 func DeriveKey(masterKey []byte, fileID string) ([]byte, error) {
 	if len(masterKey) != KeySize {
@@ -112,16 +95,11 @@ func DeriveKey(masterKey []byte, fileID string) ([]byte, error) {
 	return key, nil
 }
 
-
-
-
-
-
 func DeriveNonce(fileKey []byte, stripe, index int, nonceSize int) ([]byte, error) {
 	if len(fileKey) != KeySize {
 		return nil, ErrInvalidKey
 	}
-	
+
 	context := make([]byte, 8)
 	context[0] = byte(stripe >> 24)
 	context[1] = byte(stripe >> 16)
@@ -140,7 +118,6 @@ func DeriveNonce(fileKey []byte, stripe, index int, nonceSize int) ([]byte, erro
 	return nonce, nil
 }
 
-
 func EncryptShard(c Cipher, fileKey []byte, plaintext []byte, stripe, index int) ([]byte, error) {
 	nonce, err := DeriveNonce(fileKey, stripe, index, c.NonceSize())
 	if err != nil {
@@ -148,7 +125,6 @@ func EncryptShard(c Cipher, fileKey []byte, plaintext []byte, stripe, index int)
 	}
 	return c.Seal(fileKey, plaintext, nonce)
 }
-
 
 func DecryptShard(c Cipher, fileKey []byte, ciphertext []byte, stripe, index int) ([]byte, error) {
 	nonce, err := DeriveNonce(fileKey, stripe, index, c.NonceSize())
@@ -162,7 +138,6 @@ func DecryptShard(c Cipher, fileKey []byte, ciphertext []byte, stripe, index int
 	return plaintext, nil
 }
 
-
 func RandomKey() ([]byte, error) {
 	key := make([]byte, KeySize)
 	if _, err := rand.Read(key); err != nil {
@@ -171,12 +146,10 @@ func RandomKey() ([]byte, error) {
 	return key, nil
 }
 
-
 func HashKey(key []byte) string {
 	h := sha256.Sum256(key)
 	return fmt.Sprintf("sha256:%x", h[:8])
 }
-
 
 func MAC(key, data []byte) []byte {
 	h := hmac.New(sha256.New, key)
@@ -184,11 +157,9 @@ func MAC(key, data []byte) []byte {
 	return h.Sum(nil)
 }
 
-
 func VerifyMAC(key, data, mac []byte) bool {
 	return hmac.Equal(MAC(key, data), mac)
 }
-
 
 type StreamingEncryptor struct {
 	w   cipher.StreamWriter
@@ -210,7 +181,6 @@ func (se *StreamingEncryptor) Write(p []byte) (int, error) {
 
 func (se *StreamingEncryptor) Close() error { return nil }
 
-
 type StreamingDecryptor struct {
 	r cipher.StreamReader
 }
@@ -228,16 +198,11 @@ func (sd *StreamingDecryptor) Read(p []byte) (int, error) {
 	return sd.r.Read(p)
 }
 
-
 type CipherConfig struct {
-	
-	
 	MasterKey []byte
 
-	
 	Cipher Cipher
 }
-
 
 func NewCipherConfig(masterKey []byte) *CipherConfig {
 	return &CipherConfig{
@@ -245,7 +210,6 @@ func NewCipherConfig(masterKey []byte) *CipherConfig {
 		Cipher:    DefaultCipher,
 	}
 }
-
 
 func (cc *CipherConfig) Enabled() bool {
 	return cc.MasterKey != nil

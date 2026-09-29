@@ -100,8 +100,7 @@ func TestHealthOf(t *testing.T) {
 }
 
 func TestHealthOfSeesThroughAddedContext(t *testing.T) {
-	
-	
+
 	wrapped := fmt.Errorf("gdrive: files.get id=abc: %w", Authf(errors.New("invalid_grant")))
 
 	if got := HealthOf(wrapped); got != HealthAuthError {
@@ -118,15 +117,14 @@ func TestStatusErrorUnwrapsToItsSentinel(t *testing.T) {
 	if !errors.Is(err, ErrQuotaExceeded) {
 		t.Error("errors.Is(err, ErrQuotaExceeded) = false, want true")
 	}
-	
+
 	if errors.Is(err, ErrUnavailable) {
 		t.Error("a quota failure must not match ErrUnavailable")
 	}
 }
 
 func TestStatusErrorMessageNamesTheHealth(t *testing.T) {
-	
-	
+
 	err := Authf(errors.New("invalid_grant"))
 
 	want := "provider: node is auth_error"
@@ -147,16 +145,13 @@ func TestNotFoundNamesTheObject(t *testing.T) {
 }
 
 func TestHealthOfSaysNothingForACancelledCheck(t *testing.T) {
-	
-	
-	
+
 	for _, err := range []error{context.Canceled, context.DeadlineExceeded} {
 		if got := HealthOf(err); got != HealthUnknown {
 			t.Errorf("HealthOf(%v) = %q, want %q", err, got, HealthUnknown)
 		}
 	}
 
-	
 	wrapped := fmt.Errorf("gdrive: files.list: %w", context.Canceled)
 	if got := HealthOf(wrapped); got != HealthUnknown {
 		t.Errorf("HealthOf(wrapped cancellation) = %q, want %q", got, HealthUnknown)

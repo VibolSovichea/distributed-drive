@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 package pool
 
 import (
@@ -18,16 +10,7 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
-
-
-
-
 var ErrNotEmpty = errors.New("pool: still contains files")
-
-
-
 
 type Store interface {
 	CreatePool(ctx context.Context, pool metadata.Pool) error
@@ -35,53 +18,42 @@ type Store interface {
 	ListPools(ctx context.Context) ([]metadata.Pool, error)
 	DeletePool(ctx context.Context, id string) error
 
-	
 	ListPoolNodes(ctx context.Context, poolID string) ([]metadata.Node, error)
 	ListPoolFiles(ctx context.Context, poolID string) ([]metadata.File, error)
 
-	
 	GetNode(ctx context.Context, id string) (metadata.Node, error)
 	AddNodeToPool(ctx context.Context, poolID, nodeID string, at time.Time) error
 	RemoveNodeFromPool(ctx context.Context, poolID, nodeID string) error
 	IsNodeInPool(ctx context.Context, poolID, nodeID string) (bool, error)
 
-	
 	GetNodeChunks(ctx context.Context, nodeID string) ([]metadata.Chunk, error)
 }
 
-
 type Service interface {
-	
-	
 	Create(ctx context.Context, input CreateInput) (metadata.Pool, error)
-	
+
 	Get(ctx context.Context, poolID string) (metadata.Pool, error)
-	
-	
+
 	List(ctx context.Context) ([]metadata.Pool, error)
-	
+
 	Delete(ctx context.Context, poolID string) error
-	
+
 	Capacity(ctx context.Context, poolID string) (Capacity, error)
 
-	
 	AddNode(ctx context.Context, poolID, nodeID string) (metadata.Node, error)
-	
+
 	RemoveNode(ctx context.Context, poolID, nodeID string) error
-	
+
 	ListNodes(ctx context.Context, poolID string) ([]metadata.Node, error)
 }
 
 var _ Service = (*Manager)(nil)
 
-
 type Manager struct {
 	store Store
-	
+
 	now func() time.Time
 }
-
-
 
 func NewManager(store Store, now func() time.Time) *Manager {
 	if now == nil {
@@ -90,15 +62,12 @@ func NewManager(store Store, now func() time.Time) *Manager {
 	return &Manager{store: store, now: now}
 }
 
-
-
 type CreateInput struct {
 	Name         string
 	DataChunks   int
 	ParityChunks int
 	ChunkSize    int64
 }
-
 
 func (m *Manager) Create(ctx context.Context, input CreateInput) (metadata.Pool, error) {
 	now := m.now().UTC()
@@ -113,8 +82,6 @@ func (m *Manager) Create(ctx context.Context, input CreateInput) (metadata.Pool,
 		UpdatedAt:    now,
 	}
 
-	
-	
 	if err := pool.Validate(); err != nil {
 		return metadata.Pool{}, err
 	}
@@ -125,7 +92,6 @@ func (m *Manager) Create(ctx context.Context, input CreateInput) (metadata.Pool,
 
 	return pool, nil
 }
-
 
 func (m *Manager) Get(ctx context.Context, poolID string) (metadata.Pool, error) {
 	if !id.IsValid(poolID) {
@@ -140,10 +106,6 @@ func (m *Manager) Get(ctx context.Context, poolID string) (metadata.Pool, error)
 	return pool, nil
 }
 
-
-
-
-
 func (m *Manager) List(ctx context.Context) ([]metadata.Pool, error) {
 	pools, err := m.store.ListPools(ctx)
 	if err != nil {
@@ -152,14 +114,11 @@ func (m *Manager) List(ctx context.Context) ([]metadata.Pool, error) {
 	return pools, nil
 }
 
-
 func (m *Manager) Delete(ctx context.Context, poolID string) error {
 	if !id.IsValid(poolID) {
 		return fmt.Errorf("%w: pool id %q is not a valid ULID", metadata.ErrInvalid, poolID)
 	}
 
-	
-	
 	if _, err := m.store.GetPool(ctx, poolID); err != nil {
 		return fmt.Errorf("pool: get %s: %w", poolID, err)
 	}
@@ -178,7 +137,6 @@ func (m *Manager) Delete(ctx context.Context, poolID string) error {
 
 	return nil
 }
-
 
 func (m *Manager) Capacity(ctx context.Context, poolID string) (Capacity, error) {
 	if !id.IsValid(poolID) {
@@ -199,50 +157,37 @@ func (m *Manager) Capacity(ctx context.Context, poolID string) (Capacity, error)
 	capacity.PoolID = pool.ID
 	capacity.RequiredNodes = pool.ShardsPerStripe()
 	capacity.MissingNodes = capacity.RequiredNodes - len(nodes)
-	
-	
+
 	capacity.Usable = capacity.MissingNodes <= 0
 
 	return capacity, nil
 }
 
-
-
-
-
-
 type Capacity struct {
 	PoolID string `json:"poolId"`
-	
+
 	Nodes int `json:"nodes"`
-	
+
 	RequiredNodes int `json:"requiredNodes"`
-	
-	
+
 	MissingNodes int `json:"missingNodes"`
-	
+
 	KnownNodes int `json:"knownNodes"`
-	
+
 	TotalBytes int64 `json:"totalBytes"`
-	
+
 	UsedBytes int64 `json:"usedBytes"`
-	
-	
+
 	AvailableBytes int64 `json:"availableBytes"`
-	
-	
+
 	LogicalCapacity int64 `json:"logicalCapacity"`
-	
+
 	Usable bool `json:"usable"`
 }
 
 func summarise(nodes []metadata.Node) Capacity {
 	capacity := Capacity{Nodes: len(nodes)}
 
-	
-	
-	
-	
 	var minAvailable int64
 	first := true
 

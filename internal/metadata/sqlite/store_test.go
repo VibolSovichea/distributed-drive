@@ -14,7 +14,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
 func newStore(t *testing.T) metadata.Store {
 	t.Helper()
 
@@ -41,8 +40,6 @@ func newStore(t *testing.T) metadata.Store {
 	})
 	return store
 }
-
-
 
 var testTime = time.Date(2026, 3, 14, 15, 9, 26, 535897932, time.UTC)
 
@@ -80,8 +77,7 @@ func newFile(t *testing.T, poolID, name string) metadata.File {
 		ID:     id.New(),
 		PoolID: poolID,
 		Name:   name,
-		
-		
+
 		Size:         3_500_000,
 		ContentHash:  "d34db33f0000000000000000000000000000000000000000000000000000000",
 		ChunkSize:    1 << 20,
@@ -97,9 +93,6 @@ func newChunk(t *testing.T, fileID, nodeID string, index int) metadata.Chunk {
 	t.Helper()
 	return newChunkInStripe(t, fileID, nodeID, 0, index)
 }
-
-
-
 
 func newChunkInStripe(t *testing.T, fileID, nodeID string, stripe, index int) metadata.Chunk {
 	t.Helper()
@@ -144,8 +137,6 @@ func mustCreateFile(t *testing.T, s metadata.Store, poolID, name string) metadat
 	}
 	return file
 }
-
-
 
 func TestCreateAndGetPool(t *testing.T) {
 	s := newStore(t)
@@ -302,8 +293,7 @@ func TestDeletePoolCascadesToFiles(t *testing.T) {
 	if _, err := s.GetFile(t.Context(), file.ID); !isNotFound(err) {
 		t.Errorf("GetFile() after pool deletion error = %v, want metadata.ErrNotFound", err)
 	}
-	
-	
+
 	if err := s.DeleteNode(t.Context(), node.ID); err != nil {
 		t.Errorf("DeleteNode() after the pool was removed error = %v, want nil", err)
 	}
@@ -352,8 +342,6 @@ func TestCreatePoolWithoutIDReturnsInvalid(t *testing.T) {
 		t.Fatalf("CreatePool() error = %v, want metadata.ErrInvalid", err)
 	}
 }
-
-
 
 func TestCreateAndGetNode(t *testing.T) {
 	s := newStore(t)
@@ -420,8 +408,6 @@ func TestCreateNodeWithDuplicateNameReturnsConflict(t *testing.T) {
 	}
 }
 
-
-
 func TestCreateNodeWithDuplicateAccountReturnsConflict(t *testing.T) {
 	s := newStore(t)
 	first := mustCreateNode(t, s, "drive-a")
@@ -477,8 +463,6 @@ func TestDeleteNode(t *testing.T) {
 		t.Errorf("GetNode() after deletion error = %v, want metadata.ErrNotFound", err)
 	}
 }
-
-
 
 func TestDeleteNodeHoldingChunksReturnsConflict(t *testing.T) {
 	s := newStore(t)
@@ -554,8 +538,6 @@ func TestListNodesIsOrderedAndEmptySafe(t *testing.T) {
 		t.Errorf("ListNodes() = [%s %s], want [%s %s]", got[0].ID, got[1].ID, first.ID, second.ID)
 	}
 }
-
-
 
 func TestPoolMembership(t *testing.T) {
 	s := newStore(t)
@@ -713,8 +695,6 @@ func TestOneNodeCanServeSeveralPools(t *testing.T) {
 		t.Fatalf("ListPoolsForNode() = %d pools, want 2", len(pools))
 	}
 }
-
-
 
 func TestCreateAndGetFile(t *testing.T) {
 	s := newStore(t)
@@ -883,8 +863,6 @@ func TestFileCanBeMarkedDegraded(t *testing.T) {
 	}
 }
 
-
-
 func TestCommittingAFileWithoutAContentHashIsRejected(t *testing.T) {
 	s := newStore(t)
 	pool := mustCreatePool(t, s, "primary")
@@ -926,7 +904,7 @@ func TestDeleteFileCascadesToChunks(t *testing.T) {
 	if _, err := s.GetFile(t.Context(), file.ID); !isNotFound(err) {
 		t.Errorf("GetFile() after deletion error = %v, want metadata.ErrNotFound", err)
 	}
-	
+
 	if err := s.DeleteNode(t.Context(), node.ID); err != nil {
 		t.Errorf("DeleteNode() after the file was removed error = %v, want nil", err)
 	}
@@ -940,15 +918,12 @@ func TestDeleteMissingFileReturnsNotFound(t *testing.T) {
 	}
 }
 
-
-
 func TestCreateAndGetChunksInIndexOrder(t *testing.T) {
 	s := newStore(t)
 	pool := mustCreatePool(t, s, "primary")
 	file := mustCreateFile(t, s, pool.ID, "report.pdf")
 	node := mustCreateNode(t, s, "drive-a")
 
-	
 	chunks := []metadata.Chunk{
 		newChunk(t, file.ID, node.ID, 2),
 		newChunk(t, file.ID, node.ID, 0),
@@ -979,18 +954,12 @@ func TestCreateAndGetChunksInIndexOrder(t *testing.T) {
 	}
 }
 
-
-
-
-
 func TestGetFileChunksOrdersByStripeThenIndex(t *testing.T) {
 	s := newStore(t)
 	pool := mustCreatePool(t, s, "primary")
 	file := mustCreateFile(t, s, pool.ID, "big.bin")
 	node := mustCreateNode(t, s, "drive-a")
 
-	
-	
 	chunks := []metadata.Chunk{
 		newChunkInStripe(t, file.ID, node.ID, 2, 1),
 		newChunkInStripe(t, file.ID, node.ID, 0, 1),
@@ -1020,8 +989,6 @@ func TestGetFileChunksOrdersByStripeThenIndex(t *testing.T) {
 		}
 	}
 
-	
-	
 	if err := s.CreateChunks(t.Context(), []metadata.Chunk{
 		newChunkInStripe(t, file.ID, node.ID, 3, 0),
 	}); err != nil {
@@ -1065,8 +1032,7 @@ func TestGetNodeChunksOrdersByStripe(t *testing.T) {
 	if len(got) != 3 {
 		t.Fatalf("GetNodeChunks() = %d chunks, want 3", len(got))
 	}
-	
-	
+
 	for i, want := range []int{0, 0, 1} {
 		if got[i].StripeIndex != want {
 			t.Errorf("GetNodeChunks()[%d].StripeIndex = %d, want %d", i, got[i].StripeIndex, want)
@@ -1103,7 +1069,6 @@ func TestCreateChunksIsAtomic(t *testing.T) {
 	file := mustCreateFile(t, s, pool.ID, "report.pdf")
 	node := mustCreateNode(t, s, "drive-a")
 
-	
 	chunks := []metadata.Chunk{
 		newChunk(t, file.ID, node.ID, 0),
 		newChunk(t, file.ID, node.ID, 1),
@@ -1276,8 +1241,7 @@ func TestDeleteFileChunks(t *testing.T) {
 	if len(got) != 0 {
 		t.Errorf("GetFileChunks() = %d chunks, want 0", len(got))
 	}
-	
-	
+
 	if _, err := s.GetFile(t.Context(), file.ID); err != nil {
 		t.Errorf("GetFile() after DeleteFileChunks error = %v, want nil", err)
 	}
@@ -1323,8 +1287,6 @@ func TestGetFileChunksOnUnknownFileReturnsNotFound(t *testing.T) {
 		t.Errorf("GetFileChunks() error = %v, want metadata.ErrNotFound", err)
 	}
 }
-
-
 
 func TestWithTxCommits(t *testing.T) {
 	s := newStore(t)
@@ -1414,8 +1376,6 @@ func TestWithTxRejectsNestedTransaction(t *testing.T) {
 		t.Fatal("WithTx() nesting error = nil, want an error")
 	}
 }
-
-
 
 func TestPing(t *testing.T) {
 	s := newStore(t)

@@ -14,11 +14,6 @@ const (
 	insertChunkSQL = `INSERT INTO chunks (` + chunkColumns + `)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	
-	
-	
-	
-	
 	getFileChunksSQL = `SELECT ` + chunkColumns + ` FROM chunks
 		WHERE file_id = ?
 		ORDER BY stripe_index ASC, chunk_index ASC`
@@ -27,10 +22,6 @@ const (
 		WHERE node_id = ?
 		ORDER BY file_id ASC, stripe_index ASC, chunk_index ASC`
 
-	
-	
-	
-	
 	replaceChunkSQL = `UPDATE chunks
 		SET node_id = ?, remote_file_id = ?, size = ?, hash = ?, created_at = ?
 		WHERE id = ?`
@@ -41,15 +32,6 @@ const (
 		WHERE file_id = ?
 		GROUP BY chunk_type`
 )
-
-
-
-
-
-
-
-
-
 
 func (s *Store) CreateChunks(ctx context.Context, chunks []metadata.Chunk) error {
 	if len(chunks) == 0 {

@@ -1,17 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 package authflow
 
 import (
@@ -22,26 +8,15 @@ import (
 	"time"
 )
 
-
-
-
 var (
-	
 	ErrUnknownState = errors.New("authflow: unknown or already used state")
-	
+
 	ErrStateExpired = errors.New("authflow: the authorisation expired")
-	
-	
-	
-	
-	
+
 	ErrStateMismatch = errors.New("authflow: the authorisation belongs to a different node")
-	
+
 	ErrNotConfigured = errors.New("authflow: no provider is configured")
 )
-
-
-
 
 const (
 	DefaultStateTTL     = 10 * time.Minute
@@ -49,56 +24,34 @@ const (
 	DefaultClockSkewPad = 0
 )
 
-
 type Authorizer interface {
-	
-	
-	
-	
-	
-	
 	NewState(nodeID string) (string, error)
-	
+
 	AuthorizeURL(state string) (string, error)
-	
-	
-	
-	
+
 	Exchange(ctx context.Context, code, state string) error
 
-	
-	
-	
-	
-	
 	NodeOf(state string) (nodeID string, ok bool)
 }
 
-
 type Options struct {
-	
 	StateTTL time.Duration
-	
-	
-	
+
 	MaxPending int
-	
+
 	Now func() time.Time
-	
-	
+
 	AfterPrune func()
 }
-
 
 type Service struct {
 	auth Authorizer
 	opts Options
 
 	mu sync.Mutex
-	
-	
+
 	pending map[string]pending
-	
+
 	order []string
 }
 
@@ -106,7 +59,6 @@ type pending struct {
 	nodeID    string
 	expiresAt time.Time
 }
-
 
 func New(auth Authorizer, opts Options) (*Service, error) {
 	if auth == nil {
@@ -129,11 +81,6 @@ func New(auth Authorizer, opts Options) (*Service, error) {
 	}, nil
 }
 
-
-
-
-
-
 func (s *Service) Start(_ context.Context, nodeID string) (string, error) {
 	if nodeID == "" {
 		return "", errors.New("authflow: a node id is required")
@@ -150,8 +97,6 @@ func (s *Service) Start(_ context.Context, nodeID string) (string, error) {
 	now := s.opts.Now()
 	s.pruneLocked(now)
 
-	
-	
 	for len(s.pending) >= s.opts.MaxPending && len(s.order) > 0 {
 		oldest := s.order[0]
 		s.order = s.order[1:]
@@ -163,8 +108,7 @@ func (s *Service) Start(_ context.Context, nodeID string) (string, error) {
 
 	url, err := s.auth.AuthorizeURL(state)
 	if err != nil {
-		
-		
+
 		delete(s.pending, state)
 		s.order = s.order[:len(s.order)-1]
 		return "", fmt.Errorf("authflow: build the authorisation URL: %w", err)
@@ -172,12 +116,6 @@ func (s *Service) Start(_ context.Context, nodeID string) (string, error) {
 
 	return url, nil
 }
-
-
-
-
-
-
 
 func (s *Service) Complete(ctx context.Context, code, state string) error {
 	if code == "" {
@@ -197,17 +135,13 @@ func (s *Service) Complete(ctx context.Context, code, state string) error {
 	s.mu.Unlock()
 
 	if !ok {
-		
-		
+
 		return ErrUnknownState
 	}
 	if now.After(entry.expiresAt) {
 		return ErrStateExpired
 	}
-	
-	
-	
-	
+
 	if decoded, ok := s.auth.NodeOf(state); ok && decoded != entry.nodeID {
 		return ErrStateMismatch
 	}
@@ -215,13 +149,11 @@ func (s *Service) Complete(ctx context.Context, code, state string) error {
 	return s.auth.Exchange(ctx, code, state)
 }
 
-
 func (s *Service) Pending() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.pending)
 }
-
 
 func (s *Service) pruneLocked(now time.Time) {
 	kept := s.order[:0]
@@ -238,8 +170,6 @@ func (s *Service) pruneLocked(now time.Time) {
 	}
 	s.order = kept
 }
-
-
 
 func (s *Service) removeOrderLocked(state string) {
 	for i, existing := range s.order {

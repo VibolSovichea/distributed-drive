@@ -17,7 +17,6 @@ const (
 
 	selectFileSQL = `SELECT ` + fileColumns + ` FROM files WHERE id = ?`
 
-	
 	listPoolFilesSQL = `SELECT ` + fileColumns + ` FROM files
 		WHERE pool_id = ?
 		ORDER BY created_at DESC, id DESC`

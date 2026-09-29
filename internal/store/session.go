@@ -11,20 +11,7 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/provider"
 )
 
-
-
 var nowFunc = time.Now
-
-
-
-
-
-
-
-
-
-
-
 
 type session struct {
 	resolver NodeResolver
@@ -41,11 +28,6 @@ func newSession(resolver NodeResolver, meta metadataStore) *session {
 		opened:   make(map[string]provider.StorageNode),
 	}
 }
-
-
-
-
-
 
 func (s *session) node(ctx context.Context, nodeID string) (provider.StorageNode, error) {
 	s.mu.Lock()
@@ -67,8 +49,7 @@ func (s *session) node(ctx context.Context, nodeID string) (provider.StorageNode
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
-	
+
 	if existing, ok := s.opened[nodeID]; ok {
 		return existing, nil
 	}
@@ -76,12 +57,6 @@ func (s *session) node(ctx context.Context, nodeID string) (provider.StorageNode
 
 	return handle, nil
 }
-
-
-
-
-
-
 
 func (s *session) delete(ctx context.Context, nodeID, remoteID string) error {
 	handle, err := s.node(ctx, nodeID)
@@ -94,21 +69,9 @@ func (s *session) delete(ctx context.Context, nodeID, remoteID string) error {
 	return nil
 }
 
-
-
 type metadataStore interface {
 	GetNode(ctx context.Context, id string) (metadata.Node, error)
 }
-
-
-
-
-
-
-
-
-
-
 
 func runConcurrently(n, limit int, fn func(i int)) {
 	if n == 0 {
@@ -118,9 +81,6 @@ func runConcurrently(n, limit int, fn func(i int)) {
 		limit = n
 	}
 
-	
-	
-	
 	tokens := make(chan struct{}, limit)
 	var wg sync.WaitGroup
 
@@ -137,15 +97,7 @@ func runConcurrently(n, limit int, fn func(i int)) {
 	wg.Wait()
 }
 
-
 func isNotFound(err error) bool { return errors.Is(err, provider.ErrNotFound) }
-
-
-
-
-
-
-
 
 func readFull(ctx context.Context, r io.Reader, buf []byte) (int, error) {
 	read := 0

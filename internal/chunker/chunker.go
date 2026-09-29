@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 package chunker
 
 import (
@@ -19,73 +8,26 @@ import (
 	"io"
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const DefaultSize int64 = 1 << 20
-
-
-
-
-
-
-
-
-
-
-
 
 const MinSize int64 = 1 << 10
 
-
-
-
-
-
-
 var ErrCorrupt = errors.New("chunker: the chunk does not match its checksum")
 
-
-
-
-
-
-
 type Chunk struct {
-	
-	
-	
 	Index int64
-	
+
 	Size int64
-	
-	
-	
+
 	SHA256 string
 	Data   []byte
 }
-
-
-
-
 
 type Splitter struct {
 	size  int64
 	index int64
 	buf   []byte
 }
-
 
 func NewSplitter(size int64) (*Splitter, error) {
 	if size < MinSize {
@@ -98,29 +40,19 @@ func NewSplitter(size int64) (*Splitter, error) {
 
 	return &Splitter{
 		size: size,
-		
-		
+
 		buf: make([]byte, size),
 	}, nil
 }
 
-
 func (s *Splitter) Size() int64 { return s.size }
-
-
-
-
-
-
 
 func (s *Splitter) Next(r io.Reader) (Chunk, error) {
 	n, err := io.ReadFull(r, s.buf)
 
 	switch {
 	case errors.Is(err, io.EOF) && n == 0:
-		
-		
-		
+
 		return Chunk{}, io.EOF
 	case err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF):
 		return Chunk{}, fmt.Errorf("chunker: read chunk %d: %w", s.index, err)
@@ -138,14 +70,7 @@ func (s *Splitter) Next(r io.Reader) (Chunk, error) {
 	return chunk, nil
 }
 
-
 func (s *Splitter) Count() int64 { return s.index }
-
-
-
-
-
-
 
 func Split(r io.Reader, size int64) (total int64, chunks int64, err error) {
 	s, err := NewSplitter(size)
@@ -166,56 +91,35 @@ func Split(r io.Reader, size int64) (total int64, chunks int64, err error) {
 	}
 }
 
-
-
 type Source interface {
 	Open(index int64) (io.ReadCloser, error)
 }
 
-
 type SourceFunc func(index int64) (io.ReadCloser, error)
-
 
 func (f SourceFunc) Open(index int64) (io.ReadCloser, error) { return f(index) }
 
-
 type Descriptor struct {
-	
-	
-	
-	
 	Index int64
-	
+
 	Size int64
-	
-	
+
 	SHA256 string
 }
-
-
-
-
 
 type Joiner struct {
 	src  Source
 	plan []Descriptor
 
-	
 	next int
-	
+
 	current io.ReadCloser
-	
+
 	pending []byte
-	
+
 	offset int64
 	closed bool
 }
-
-
-
-
-
-
 
 func NewJoiner(src Source, plan []Descriptor) (*Joiner, error) {
 	if src == nil {
@@ -224,8 +128,7 @@ func NewJoiner(src Source, plan []Descriptor) (*Joiner, error) {
 
 	sorted := make([]Descriptor, len(plan))
 	copy(sorted, plan)
-	
-	
+
 	for i := 1; i < len(sorted); i++ {
 		for j := i; j > 0 && sorted[j].Index < sorted[j-1].Index; j-- {
 			sorted[j], sorted[j-1] = sorted[j-1], sorted[j]
@@ -246,7 +149,6 @@ func NewJoiner(src Source, plan []Descriptor) (*Joiner, error) {
 
 	return &Joiner{src: src, plan: sorted}, nil
 }
-
 
 func (j *Joiner) Read(p []byte) (int, error) {
 	for {
@@ -270,12 +172,6 @@ func (j *Joiner) Read(p []byte) (int, error) {
 		}
 	}
 }
-
-
-
-
-
-
 
 func (j *Joiner) openNext() error {
 	if j.current != nil {
@@ -308,9 +204,7 @@ func (j *Joiner) openNext() error {
 	if desc.SHA256 != "" {
 		digest := sha256.Sum256(data)
 		if got := hex.EncodeToString(digest[:]); got != desc.SHA256 {
-			
-			
-			
+
 			return fmt.Errorf("%w: chunk %d hashes to %s, expected %s",
 				ErrCorrupt, desc.Index, got, desc.SHA256)
 		}
@@ -320,9 +214,7 @@ func (j *Joiner) openNext() error {
 	return nil
 }
 
-
 func (j *Joiner) Offset() int64 { return j.offset }
-
 
 func (j *Joiner) Close() error {
 	j.closed = true
@@ -333,9 +225,6 @@ func (j *Joiner) Close() error {
 	j.current = nil
 	return err
 }
-
-
-
 
 func Hash(b []byte) string {
 	digest := sha256.Sum256(b)

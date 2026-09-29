@@ -8,16 +8,7 @@ import (
 	"testing"
 )
 
-
-
-
-
 const stripeSize int64 = 64 << 10
-
-
-
-
-
 
 func TestPlanAgreesWithTheSplitter(t *testing.T) {
 	t.Parallel()
@@ -47,8 +38,6 @@ func TestPlanAgreesWithTheSplitter(t *testing.T) {
 					t.Errorf("DataShardCount() = %d, want 0 for an empty file", l.DataShardCount())
 				}
 
-				
-				
 				payload := make([]byte, total)
 				for i := range payload {
 					payload[i] = byte(i*31 + i/97)
@@ -90,8 +79,6 @@ func TestPlanAgreesWithTheSplitter(t *testing.T) {
 					t.Error("the reassembled bytes differ from the input")
 				}
 
-				
-				
 				var sum int64
 				for i := 0; i < l.DataShardCount(); i++ {
 					stripe, index := l.StripeOf(i)
@@ -176,17 +163,16 @@ func TestDataShardsInStripeIsFullUntilTheLast(t *testing.T) {
 		t.Fatalf("Stripes = %d, want 3", l.Stripes)
 	}
 
-	
 	for stripe := 0; stripe < 2; stripe++ {
 		if got := l.DataShardsInStripe(stripe); got != k {
 			t.Errorf("DataShardsInStripe(%d) = %d, want %d", stripe, got, k)
 		}
 	}
-	
+
 	if got := l.DataShardsInStripe(2); got != 1 {
 		t.Errorf("DataShardsInStripe(2) = %d, want 1", got)
 	}
-	
+
 	if got := l.DataShardsInStripe(3); got != 0 {
 		t.Errorf("DataShardsInStripe(3) = %d, want 0", got)
 	}
@@ -200,8 +186,7 @@ func TestOnlyTheFinalDataShardIsShort(t *testing.T) {
 
 	const k = 4
 	per := int64(k) * stripeSize
-	
-	
+
 	l, err := Plan(2*per+3, stripeSize, k)
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
@@ -253,8 +238,6 @@ func TestParityShardsAreAlwaysFullWidth(t *testing.T) {
 	const k = 4
 	per := int64(k) * stripeSize
 
-	
-	
 	for _, total := range []int64{0, 1, stripeSize, per, per + 1, 3*per + 7} {
 		l, err := Plan(total, stripeSize, k)
 		if err != nil {
@@ -270,7 +253,7 @@ func TestStripeOfWalksStripesInOrder(t *testing.T) {
 	t.Parallel()
 
 	const k = 4
-	
+
 	total := int64(3*k*stripeSize) + stripeSize + 5
 	l, err := Plan(total, stripeSize, k)
 	if err != nil {
@@ -316,7 +299,7 @@ func TestEmptyFileHasNoShardsAndNoStripes(t *testing.T) {
 	if got := l.DataShardsInStripe(0); got != 0 {
 		t.Errorf("DataShardsInStripe(0) = %d, want 0", got)
 	}
-	
+
 	s, err := l.Splitter()
 	if err != nil {
 		t.Fatalf("Splitter: %v", err)
@@ -333,9 +316,7 @@ func TestDataShardSizeIgnoresAnIndexPastTheDataShards(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
 	}
-	
-	
-	
+
 	if got := l.DataShardSize(0, 2); got != 0 {
 		t.Errorf("DataShardSize(0, 2) = %d, want 0 for a parity slot", got)
 	}
@@ -347,8 +328,6 @@ func TestDataShardSizeIgnoresAnIndexPastTheDataShards(t *testing.T) {
 func TestLayoutOfOneChunkIsASingleStripe(t *testing.T) {
 	t.Parallel()
 
-	
-	
 	l, err := Plan(stripeSize+5, stripeSize, 1)
 	if err != nil {
 		t.Fatalf("Plan: %v", err)

@@ -10,9 +10,6 @@ import (
 	"github.com/VibolSovichea/distributed-drive/internal/metadata"
 )
 
-
-
-
 const (
 	existPoolSQL = `SELECT 1 FROM pools WHERE id = ?`
 	existNodeSQL = `SELECT 1 FROM nodes WHERE id = ?`
@@ -25,14 +22,8 @@ const (
 
 	deletePoolNodeSQL = `DELETE FROM pool_nodes WHERE pool_id = ? AND node_id = ?`
 
-	
-	
-	
-	
 	touchPoolSQL = `UPDATE pools SET updated_at = ? WHERE id = ?`
 
-	
-	
 	listPoolNodesSQL = `SELECT n.id, n.name, n.provider, n.account_identifier, n.status,
 			n.capacity, n.used_capacity, n.last_seen, n.created_at, n.updated_at
 		FROM pool_nodes pn
@@ -64,12 +55,6 @@ func (s *Store) AddNodeToPool(ctx context.Context, poolID, nodeID string, at tim
 		return err
 	}
 
-	
-	
-	
-	
-	
-	
 	return s.inTransaction(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, insertPoolNodeSQL,
 			poolID, nodeID, at.UnixNano()); err != nil {
@@ -158,7 +143,6 @@ func (s *Store) IsNodeInPool(ctx context.Context, poolID, nodeID string) (bool, 
 	}
 	return member, nil
 }
-
 
 func (s *Store) requireExists(ctx context.Context, entity, query, id string) error {
 	var found int
