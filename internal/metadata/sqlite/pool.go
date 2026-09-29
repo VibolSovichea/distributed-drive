@@ -141,8 +141,7 @@ func scanPool(row scanner) (metadata.Pool, error) {
 func requireOneRow(res sql.Result, op, entity, id string) error {
 	affected, err := res.RowsAffected()
 	if err != nil {
-
-		return nil
+		return err
 	}
 	if affected == 0 {
 		return notFound(entity, id)

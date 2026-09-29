@@ -733,7 +733,7 @@ func (c *Client) apiError(op string, resp *http.Response) error {
 
 	switch {
 	case status == http.StatusNotFound:
-		return fmt.Errorf("%w: %s", provider.ErrNotFound, err)
+		return fmt.Errorf("gdrive %s: %w", op, err)
 
 	case status == http.StatusUnauthorized:
 		return provider.Authf(err)
@@ -746,14 +746,14 @@ func (c *Client) apiError(op string, resp *http.Response) error {
 		return provider.Authf(err)
 
 	case status == http.StatusRequestEntityTooLarge:
-		return provider.Degradedf(fmt.Errorf("%w: %s", provider.ErrTooLarge, err))
+		return provider.Degradedf(fmt.Errorf("gdrive %s: %w", op, err))
 
 	case status == http.StatusBadRequest:
-		return provider.Degradedf(fmt.Errorf("%w: %s", provider.ErrInvalid, err))
+		return provider.Degradedf(fmt.Errorf("gdrive %s: %w", op, err))
 
 	case status == http.StatusTooManyRequests:
 
-		return provider.Degradedf(fmt.Errorf("%w: %s", provider.ErrUnavailable, err))
+		return provider.Degradedf(fmt.Errorf("gdrive %s: %w", op, err))
 
 	case retryableStatus(status):
 		return provider.Unavailablef(err)

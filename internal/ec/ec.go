@@ -80,7 +80,7 @@ func New(params Params) (Codec, error) {
 
 	enc, err := reedsolomon.New(params.Data, params.Parity)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidParams, err)
+		return nil, fmt.Errorf("new codec: %w", err)
 	}
 
 	return &reedSolomon{params: params, encoder: enc}, nil

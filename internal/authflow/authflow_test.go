@@ -56,7 +56,12 @@ func (f *fakeAuthorizer) NodeOf(state string) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	nodeID, ok = strings.CutPrefix(nodeID[strings.Index(nodeID, "@"):], "@")
+	// Find the @ that separates the state number from the node ID
+	idx := strings.Index(nodeID, "@")
+	if idx == -1 {
+		return "", false
+	}
+	nodeID = nodeID[idx+1:]
 	if nodeID == "" {
 		return "", false
 	}

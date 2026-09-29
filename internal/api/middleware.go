@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -146,7 +148,14 @@ func (s *Server) recoverer(next http.Handler) http.Handler {
 				return
 			}
 
-			if recovered == http.ErrAbortHandler {
+			var err error
+			if e, ok := recovered.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("%v", recovered)
+			}
+
+			if errors.Is(err, http.ErrAbortHandler) {
 				panic(recovered)
 			}
 

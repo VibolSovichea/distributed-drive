@@ -32,7 +32,7 @@ func TestARoundTripReturnsTheOriginalBytes(t *testing.T) {
 		body := pattern(size, byte(size))
 
 		file := h.upload(t, "f.bin", body)
-		if file.Size != int64(size) {
+		if file.Size != size {
 			t.Errorf("size %d: file.Size = %d, want %d", size, file.Size, size)
 		}
 		if file.Status != metadata.FileStatusCommitted {

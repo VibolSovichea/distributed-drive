@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -25,15 +24,15 @@ func classify(op string, err error) error {
 		return fmt.Errorf("sqlite: %s: %w", op, err)
 	}
 
-	switch code := serr.Code(); {
-	case code == sqlite3.SQLITE_CONSTRAINT_UNIQUE, code == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY:
-		return fmt.Errorf("%w: %s: %s", metadata.ErrConflict, op, serr)
-	case code == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY,
-		code == sqlite3.SQLITE_CONSTRAINT_NOTNULL,
-		code == sqlite3.SQLITE_CONSTRAINT_CHECK,
-		code == sqlite3.SQLITE_CONSTRAINT:
-		return fmt.Errorf("%w: %s: %s", metadata.ErrInvalid, op, serr)
-	case code == sqlite3.SQLITE_BUSY, code == sqlite3.SQLITE_LOCKED:
+	switch serr.Code() {
+	case sqlite3.SQLITE_CONSTRAINT_UNIQUE, sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY:
+		return fmt.Errorf("sqlite %s: %w", op, errors.Join(metadata.ErrConflict, serr))
+	case sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY,
+		sqlite3.SQLITE_CONSTRAINT_NOTNULL,
+		sqlite3.SQLITE_CONSTRAINT_CHECK,
+		sqlite3.SQLITE_CONSTRAINT:
+		return fmt.Errorf("sqlite %s: %w", op, errors.Join(metadata.ErrInvalid, serr))
+	case sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED:
 		return fmt.Errorf("sqlite: %s: database is busy: %w", op, err)
 	default:
 		return fmt.Errorf("sqlite: %s: %w", op, err)
@@ -42,10 +41,6 @@ func classify(op string, err error) error {
 
 func isCancellation(err error) bool {
 	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
-}
-
-func isNoRows(err error) bool {
-	return errors.Is(err, sql.ErrNoRows)
 }
 
 func notFound(entity, id string) error {

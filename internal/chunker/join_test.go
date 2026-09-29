@@ -163,7 +163,9 @@ func TestJoinRejectsAGapInThePlan(t *testing.T) {
 	payload := variedBytes(int(testSize) * 4)
 	_, plan := splitToPlan(t, payload, testSize)
 
-	gapped := append(plan[:1:1], plan[2:]...)
+	gapped := make([]Descriptor, 0, len(plan)-1)
+	gapped = append(gapped, plan[:1]...)
+	gapped = append(gapped, plan[2:]...)
 
 	_, err := NewJoiner(mustSource(t, payload, testSize), gapped)
 	if err == nil {
@@ -180,7 +182,9 @@ func TestJoinRejectsADuplicateIndex(t *testing.T) {
 	payload := variedBytes(int(testSize) * 2)
 	_, plan := splitToPlan(t, payload, testSize)
 
-	doubled := append(plan, plan[0])
+	doubled := make([]Descriptor, len(plan)+1)
+	copy(doubled, plan)
+	doubled[len(plan)] = plan[0]
 	if _, err := NewJoiner(mustSource(t, payload, testSize), doubled); err == nil {
 		t.Error("a plan with a duplicate index must be rejected")
 	}

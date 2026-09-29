@@ -12,10 +12,8 @@ import (
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	if err := app.Run(ctx); err != nil {
-
 		stop()
 		fmt.Fprintf(os.Stderr, "distributed-drive: %v\n", err)
 		os.Exit(1)

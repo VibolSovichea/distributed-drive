@@ -35,7 +35,6 @@ type App struct {
 	store metadata.Store
 	api   *api.Server
 	nodes node.Service
-	auth  *authflow.Service
 
 	migrations int
 }

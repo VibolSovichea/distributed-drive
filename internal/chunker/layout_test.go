@@ -254,7 +254,7 @@ func TestStripeOfWalksStripesInOrder(t *testing.T) {
 
 	const k = 4
 
-	total := int64(3*k*stripeSize) + stripeSize + 5
+	total := 3*k*stripeSize + stripeSize + 5
 	l, err := Plan(total, stripeSize, k)
 	if err != nil {
 		t.Fatalf("Plan: %v", err)

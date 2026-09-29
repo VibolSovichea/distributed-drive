@@ -67,7 +67,11 @@ func TestListenAndServeFinishesInFlightRequestsBeforeReturning(t *testing.T) {
 	waitForServer(t, addr)
 
 	go func() {
-		resp, err := http.Get("http://" + addr + "/api/pools/01J00000000000000000000000")
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+addr+"/api/pools/01J00000000000000000000000", nil)
+		if err != nil {
+			return
+		}
+		resp, err := http.DefaultClient.Do(req)
 		if err == nil {
 			_ = resp.Body.Close()
 		}

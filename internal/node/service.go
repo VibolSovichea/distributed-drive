@@ -229,7 +229,7 @@ func (r *Registry) probe(ctx context.Context, client provider.StorageNode) (
 	var identity provider.Identity
 	var quota provider.Quota
 
-	idErr := error(nil)
+	var idErr error
 	identity, idErr = client.Identity(ctx)
 	if idErr != nil {
 		return identity, quota, idErr

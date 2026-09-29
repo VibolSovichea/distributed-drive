@@ -79,13 +79,6 @@ func newFakeDrive() *fakeDrive {
 	}
 }
 
-func (f *fakeDrive) reset() {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.requests = map[string]int{}
-	f.failNextChunks = 0
-}
-
 func (f *fakeDrive) start(t *testing.T) *Client {
 	t.Helper()
 

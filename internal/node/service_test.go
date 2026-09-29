@@ -127,12 +127,6 @@ func (f *fakeNode) Identity(context.Context) (provider.Identity, error) {
 	return f.identity, f.identityErr
 }
 
-func (f *fakeNode) openCount() int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return f.opened
-}
-
 type fakeFactory struct {
 	mu sync.Mutex
 
