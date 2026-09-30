@@ -113,11 +113,6 @@ func (h *handlers) writeServiceError(w http.ResponseWriter, r *http.Request, err
 	}
 }
 
-type uploadRequest struct {
-	Name string `json:"name"`
-	Size int64  `json:"size,omitempty"`
-}
-
 func (h *handlers) handleUpload(w http.ResponseWriter, r *http.Request) {
 	poolID := chi.URLParam(r, "poolID")
 	if poolID == "" {

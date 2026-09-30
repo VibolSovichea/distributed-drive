@@ -2,7 +2,7 @@ BINARY      := distributed-drive
 CMD         := ./cmd/server
 BIN_DIR     := bin
 COVER_FILE  := coverage.txt
-LINT_VERSION := v2.2.2
+LINT_VERSION := v2.13.0
 
 .DEFAULT_GOAL := help
 

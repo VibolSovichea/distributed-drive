@@ -172,7 +172,7 @@ func (f *Factory) authConfig() gdrive.AuthConfig {
 }
 
 func (f *Factory) openDrive(ctx context.Context, n metadata.Node) (provider.StorageNode, error) {
-	if f.opts.TokenKey == nil || len(f.opts.TokenKey) == 0 {
+	if len(f.opts.TokenKey) == 0 {
 
 		return nil, fmt.Errorf("%w: no token encryption key is configured, "+
 			"so a Google credential cannot be stored safely", node.ErrNoClient)

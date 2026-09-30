@@ -133,7 +133,7 @@ func DecryptShard(c Cipher, fileKey []byte, ciphertext []byte, stripe, index int
 	}
 	plaintext, err := c.Open(fileKey, ciphertext, nonce)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDecrypt, err)
+		return nil, fmt.Errorf("decrypt: %w", err)
 	}
 	return plaintext, nil
 }
@@ -159,43 +159,6 @@ func MAC(key, data []byte) []byte {
 
 func VerifyMAC(key, data, mac []byte) bool {
 	return hmac.Equal(MAC(key, data), mac)
-}
-
-type StreamingEncryptor struct {
-	w   cipher.StreamWriter
-	buf []byte
-}
-
-func newStreamingEncryptor(key []byte) (*StreamingEncryptor, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	stream := cipher.NewCTR(block, make([]byte, block.BlockSize()))
-	return &StreamingEncryptor{w: cipher.StreamWriter{S: stream}}, nil
-}
-
-func (se *StreamingEncryptor) Write(p []byte) (int, error) {
-	return se.w.Write(p)
-}
-
-func (se *StreamingEncryptor) Close() error { return nil }
-
-type StreamingDecryptor struct {
-	r cipher.StreamReader
-}
-
-func newStreamingDecryptor(key []byte, iv []byte) (*StreamingDecryptor, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	stream := cipher.NewCTR(block, iv)
-	return &StreamingDecryptor{r: cipher.StreamReader{S: stream, R: nil}}, nil
-}
-
-func (sd *StreamingDecryptor) Read(p []byte) (int, error) {
-	return sd.r.Read(p)
 }
 
 type CipherConfig struct {

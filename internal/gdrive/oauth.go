@@ -27,8 +27,6 @@ const DefaultRedirectURI = "http://127.0.0.1:8088/oauth/callback"
 
 const authRequestTimeout = 60 * time.Second
 
-const authorizeOffline = true
-
 func Authorize(cfg AuthConfig, state string) (string, error) {
 	if err := cfg.validate(); err != nil {
 		return "", err

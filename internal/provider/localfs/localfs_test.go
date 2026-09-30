@@ -507,7 +507,5 @@ func (c *countingReader) Read(p []byte) (int, error) {
 func TestProviderInterfaceIsSatisfied(t *testing.T) {
 
 	var node provider.StorageNode = newNode(t)
-	if node == nil {
-		t.Fatal("the node does not satisfy provider.StorageNode")
-	}
+	_ = node
 }
