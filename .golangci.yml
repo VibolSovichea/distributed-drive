@@ -5,7 +5,7 @@ run:
   tests: true
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - govet
     - ineffassign
@@ -16,48 +16,35 @@ linters:
     - errorlint
     - gocritic
     - wastedassign
-  disable:
-    - errcheck
-    - noctx
-
-linters-settings:
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport
-      - ifElseChain
-  revive:
-    confidence: 0.8
+  settings:
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+  exclusions:
     rules:
-      - name: exported
-        severity: warning
-        disabled: true
-      - name: unexported-return
-        severity: warning
-      - name: indent-error-flow
-        severity: error
-      - name: error-return
-        severity: error
-      - name: error-naming
-        severity: error
+      - path: internal/crypto/crypto\.go
+        linters:
+          - unused
+      - path: internal/fileapi/service\.go
+        linters:
+          - unused
 
 issues:
-  exclude-rules:
-    - path: internal/crypto/crypto\.go
-      linters:
-        - unused
-    - path: internal/fileapi/service\.go
-      linters:
-        - unused
   max-issues-per-linter: 0
   max-same-issues: 0
 
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+formatters:
+  enable:
+    - gofmt
+  settings:
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: lax
